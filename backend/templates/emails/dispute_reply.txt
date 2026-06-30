@@ -1,0 +1,13 @@
+New Reply on Your Dispute
+
+Hi {{ user_name }},
+
+There's a new reply on your dispute.
+
+Dispute ID: {{ dispute_id }}
+Subject: {{ dispute_title }}
+
+Please check the dispute portal to view the reply and respond if necessary.
+
+Best regards,
+The FANN Team

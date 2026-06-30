@@ -1,0 +1,13 @@
+{% extends 'emails/base.html' %}
+{% block content %}
+<h2>New Reply on Your Dispute</h2>
+<p>Hi {{ user_name }},</p>
+<p>There's a new reply on your dispute.</p>
+<div class="info-box">
+    <strong>Dispute ID:</strong> {{ dispute_id }}<br>
+    <strong>Subject:</strong> {{ dispute_title }}
+</div>
+<p>Please check the dispute portal to view the reply and respond if necessary.</p>
+<a href="{{ platform_url }}/disputes/{{ dispute_id }}" class="button">View Dispute</a>
+<p>Best regards,<br>The FANN Team</p>
+{% endblock %}

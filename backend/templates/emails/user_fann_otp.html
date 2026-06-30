@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Verify your email - FannAssets</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        /* Resets */
+        body { margin: 0; padding: 0; background-color: #0F021C; font-family: 'Arial', sans-serif; -webkit-font-smoothing: antialiased; }
+        table { border-collapse: collapse; width: 100%; }
+        a { color: #FFCC33; text-decoration: none; }
+
+        /* Layout */
+        .wrapper { width: 100%; table-layout: fixed; background-color: #0F021C; padding-bottom: 40px; }
+        .main-content { background-color: #0F021C; width: 100%; max-width: 600px; margin: 0 auto; }
+
+        /* Card Design (Matching your React Components) */
+        .card {
+            background-color: #1D112A;
+            border: 1px solid #374151; /* Subtle border like your UI */
+            border-top: 4px solid #FFCC33; /* Gold Top Border Accent */
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+
+        .card-body { padding: 40px 32px; }
+
+        /* Typography */
+        h1 { color: #FFFFFF; font-size: 24px; font-weight: 700; margin: 0 0 20px 0; letter-spacing: 0.5px; }
+        p { color: #D1D5DC; font-size: 16px; line-height: 24px; margin: 0 0 20px 0; }
+
+        /* OTP Box Design */
+        .otp-container {
+            margin: 30px 0;
+            text-align: center;
+        }
+        .otp-code {
+            background-color: #2A1B3D; /* Slightly lighter inner box */
+            color: #FFCC33; /* Gold Text */
+            font-size: 36px;
+            font-weight: 800;
+            letter-spacing: 8px;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px dashed #FFCC33; /* Dashed gold border like receipt */
+            display: inline-block;
+        }
+
+        /* Footer */
+        .footer { text-align: center; font-size: 12px; color: #8A8A8A; padding-top: 20px; }
+        .footer a { color: #8A8A8A; text-decoration: underline; }
+
+        /* Mobile Responsiveness */
+        @media only screen and (max-width: 480px) {
+            .card-body { padding: 30px 20px; }
+            .otp-code { font-size: 28px; letter-spacing: 4px; padding: 15px; width: 100%; box-sizing: border-box; }
+        }
+    </style>
+</head>
+<body>
+
+    <table role="presentation" class="wrapper">
+        <tr>
+            <td align="center">
+                <br><br>
+                <table role="presentation" class="main-content" width="600">
+                    <tr>
+                        <td align="center" style="padding-bottom: 20px;">
+                            <span style="color: #FFCC33; font-size: 20px; font-weight: bold; letter-spacing: 1px;">FANN ASSETS</span>
+                        </td>
+                    </tr>
+                </table>
+
+                <table role="presentation" class="main-content" width="600">
+                    <tr>
+                        <td class="card">
+                            <div class="card-body">
+                                <h1>Verify your email address</h1>
+
+                                <p>Hi {{ first_name | default:"there" }},</p>
+
+                                <p>Thank you for joining <strong>FannAssets</strong>. To complete your registration and secure your account, please use the One-Time Password (OTP) below.</p>
+
+                                <div class="otp-container">
+                                    <span class="otp-code">{{ otp }}</span>
+                                </div>
+
+                                <p style="font-size: 14px; color: #A7A7A7;">
+                                    This code is valid for <strong>10 minutes</strong>. Do not share this code with anyone.
+                                </p>
+
+                                <div style="border-top: 1px solid #374151; margin: 30px 0;"></div>
+
+                                <p style="margin-bottom: 0;">If you didn't request this code, you can safely ignore this email.</p>
+
+                                <br>
+                                <p style="margin: 0; font-size: 15px;">Best regards,<br><span style="color: #FFCC33;">The FannAssets Team</span></p>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+
+                <table role="presentation" class="main-content" width="600">
+                    <tr>
+                        <td class="footer">
+                            <p>You received this email because you signed up on FannAssets.</p>
+                            <p>
+                                <a href="{{ privacy_url }}">Privacy Policy</a> &bull;
+                                <a href="{{ terms_url }}">Terms of Service</a> &bull;
+                                <a href="mailto:{{ support_email }}">Support</a>
+                            </p>
+                            <p>Metaverse City, MT 54321</p>
+                        </td>
+                    </tr>
+                </table>
+                <br><br>
+            </td>
+        </tr>
+    </table>
+
+</body>
+</html>

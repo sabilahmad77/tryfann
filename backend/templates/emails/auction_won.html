@@ -1,0 +1,13 @@
+{% extends 'emails/base.html' %}
+{% block content %}
+<h2>🎉 Congratulations! You Won the Auction!</h2>
+<p>Hi {{ customer_name }},</p>
+<p>Great news! You've won the auction!</p>
+<div class="info-box">
+    <strong>Auction:</strong> {{ auction_title }}<br>
+    <strong>Winning Bid:</strong> ${{ winning_bid }}
+</div>
+<p>Please proceed to complete your payment to finalize the purchase.</p>
+<a href="{{ platform_url }}/checkout" class="button">Complete Payment</a>
+<p>Congratulations!<br>The FANN Team</p>
+{% endblock %}

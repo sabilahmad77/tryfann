@@ -1,0 +1,13 @@
+Congratulations! You Won the Auction!
+
+Hi {{ customer_name }},
+
+Great news! You've won the auction!
+
+Auction: {{ auction_title }}
+Winning Bid: ${{ winning_bid }}
+
+Please proceed to complete your payment to finalize the purchase.
+
+Congratulations!
+The FANN Team

@@ -1,0 +1,21 @@
+# TryFANN — crawl policy
+User-agent: *
+Allow: /$
+Allow: /contact-us
+Allow: /privacy-terms
+
+# App / auth surfaces are not for indexing
+Disallow: /dashboard
+Disallow: /admin
+Disallow: /onboarding
+Disallow: /complete-profile
+Disallow: /profile
+Disallow: /settings
+Disallow: /signin
+Disallow: /signup
+Disallow: /forgot-password
+Disallow: /leaderboard
+Disallow: /feedback
+Disallow: /ref/
+
+Sitemap: https://tryfann.com/sitemap.xml

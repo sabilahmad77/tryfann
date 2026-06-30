@@ -1,0 +1,12 @@
+{% extends 'emails/base.html' %}
+{% block content %}
+<h2>Offer Update</h2>
+<p>Hi {{ customer_name }},</p>
+<p>Unfortunately, your offer for the following artwork has been declined by the artist.</p>
+<div class="info-box">
+    <strong>Artwork:</strong> {{ artwork_title }}
+</div>
+<p>Don't worry! There are many other amazing artworks available on FANN.</p>
+<a href="{{ platform_url }}/artworks" class="button">Browse Artworks</a>
+<p>Best regards,<br>The FANN Team</p>
+{% endblock %}

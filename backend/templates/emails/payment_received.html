@@ -1,0 +1,20 @@
+{% extends 'emails/base.html' %}
+{% block content %}
+<h2>💰 Payment Received</h2>
+<p>Hi {{ artist_name }},</p>
+<p>Great news! You've received a payment for your artwork sale.</p>
+
+<div class="info-box">
+    <strong>Order ID:</strong> #{{ order_id }}<br>
+    <strong>Artwork:</strong> {{ artwork_title }}<br>
+    <strong>Amount:</strong> ${{ amount }}<br>
+    <strong>Commission:</strong> ${{ commission }}<br>
+    <strong>Your Earnings:</strong> ${{ net_amount }}
+</div>
+
+<p>The payment has been credited to your FANN wallet. You can withdraw it to your bank account at any time.</p>
+
+<a href="{{ platform_url }}/wallet" class="button">View Wallet</a>
+
+<p>Best regards,<br>The FANN Team</p>
+{% endblock %}

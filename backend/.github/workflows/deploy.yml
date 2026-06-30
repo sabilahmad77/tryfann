@@ -1,0 +1,28 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches: [ "staging" ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v0.1.6
+        with:
+          host: ec2-51-20-106-226.eu-north-1.compute.amazonaws.com
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          command_timeout: 60m
+          script: |
+            cd /var/www/fann
+            git fetch origin staging
+            git checkout staging
+            git pull origin staging
+            docker compose down
+            docker compose up -d --build

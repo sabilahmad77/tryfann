@@ -1,0 +1,13 @@
+Artwork Uploaded Successfully!
+
+Hi {{ artist_name }},
+
+Great news! Your artwork has been successfully uploaded and is now live on FANN.
+
+Artwork Title: {{ artwork_title }}
+Artwork ID: {{ artwork_id }}
+
+Your artwork is now visible to potential buyers. We'll notify you when someone shows interest or makes a purchase.
+
+Best regards,
+The FANN Team

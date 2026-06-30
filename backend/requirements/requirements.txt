@@ -1,0 +1,44 @@
+# Core framework
+Django==4.2.10
+djangorestframework==3.14.0
+
+# Database
+psycopg2-binary==2.9.9
+
+# Celery & Redis
+celery==5.3.6
+redis==5.0.4
+
+# Utilities
+django-extensions==3.2.3
+python-dotenv==1.0.1
+djangorestframework-simplejwt==5.5.1
+django-crontab==0.7.1
+# Timezone support
+tzdata==2023.3
+django-cors-headers
+django-cors-middleware
+# Required by Django
+asgiref>=3.9.1,<4
+sqlparse==0.4.4
+open_clip_torch==3.2.0
+faiss-cpu==1.12.0
+torch==2.9.0
+torchvision==0.24.0
+# Optional: for environment-specific settings
+environs==9.5.0
+
+channels_redis==4.3.0
+
+daphne==4.2.1
+Pillow>=10.0.0
+tensorflow>=2.13.0
+opencv-python>=4.8.0
+numpy>=1.24.0
+PyJWT==2.10.1
+gunicorn
+psycopg2-binary
+
+web3==6.2.0  # or the version you need
+joblib
+catboost>=1.2

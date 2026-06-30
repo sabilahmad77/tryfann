@@ -1,0 +1,16 @@
+Payment Received
+
+Hi {{ artist_name }},
+
+Great news! You've received a payment for your artwork sale.
+
+Order ID: #{{ order_id }}
+Artwork: {{ artwork_title }}
+Amount: ${{ amount }}
+Commission: ${{ commission }}
+Your Earnings: ${{ net_amount }}
+
+The payment has been credited to your FANN wallet. You can withdraw it to your bank account at any time.
+
+Best regards,
+The FANN Team

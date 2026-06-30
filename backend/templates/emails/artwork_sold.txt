@@ -1,0 +1,14 @@
+Congratulations! Your Artwork Sold!
+
+Hi {{ artist_name }},
+
+Fantastic news! Your artwork has been sold!
+
+Artwork: {{ artwork_title }}
+Buyer: {{ buyer_name }}
+Sale Price: ${{ sale_price }}
+
+The payment will be processed and transferred to your account according to our standard payment schedule.
+
+Congratulations on your sale!
+The FANN Team

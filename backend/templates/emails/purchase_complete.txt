@@ -1,0 +1,14 @@
+Purchase Completed Successfully!
+
+Hi {{ customer_name }},
+
+Thank you for your purchase! Your order has been confirmed.
+
+Order ID: #{{ order_id }}
+Artwork: {{ artwork_title }}
+Amount: ${{ amount }}
+
+You can track your order status and download your artwork from your dashboard.
+
+Thank you for supporting artists on FANN!
+The FANN Team

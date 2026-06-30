@@ -1,0 +1,13 @@
+Dispute {% if role == 'buyer' %}Created{% else %}Opened{% endif %}
+
+Hi {{ user_name }},
+
+{% if role == 'buyer' %}Your dispute has been created successfully.{% else %}A dispute has been opened regarding one of your sales.{% endif %}
+
+Dispute ID: {{ dispute_id }}
+Order ID: #{{ order_id }}
+
+Our team will review the dispute and work towards a fair resolution. You can add comments and evidence through the dispute portal.
+
+Best regards,
+The FANN Team

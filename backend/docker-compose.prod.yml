@@ -1,0 +1,207 @@
+version: "3.8"
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend.Dockerfile
+    container_name: fann-backend
+    restart: always
+    command: >
+      sh -c "
+      python manage.py migrate &&
+      python manage.py collectstatic --noinput &&
+      daphne -b 0.0.0.0 -p 8000 core.asgi:application
+      "
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      DB_HOST: ${DB_HOST}        # e.g. RDS endpoint or host machine
+      DB_PORT: ${DB_PORT:-5432}
+
+      PYTHONUNBUFFERED: 1
+      PYTHONDONTWRITEBYTECODE: 1
+      IN_DOCKER: "1"
+
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/1
+      CELERY_RESULT_BACKEND: redis://redis:6379/2
+
+    depends_on:
+      redis:
+        condition: service_healthy
+
+    volumes:
+      - /var/www/apifann/media:/app/media
+      - /var/www/apifann/staticfiles:/app/staticfiles
+
+
+  celery:
+    build:
+      context: .
+      dockerfile: backend.Dockerfile
+    container_name: fann-celery
+    restart: always
+    command: celery -A core worker -l info
+    env_file:
+      - .env
+    environment:
+      DB_HOST: ${DB_HOST}        # e.g. RDS endpoint or host machine
+      DB_PORT: ${DB_PORT:-5432}
+      CELERY_BROKER_URL: redis://redis:6379/1
+      CELERY_RESULT_BACKEND: redis://redis:6379/2
+    depends_on:
+      redis:
+        condition: service_healthy
+
+
+  celery-beat:
+    build:
+      context: .
+      dockerfile: backend.Dockerfile
+    container_name: fann-celery-beat
+    restart: always
+    command: celery -A core beat -l info
+    env_file:
+      - .env
+    environment:
+      DB_HOST: ${DB_HOST}        # e.g. RDS endpoint or host machine
+      DB_PORT: ${DB_PORT:-5432}
+      CELERY_BROKER_URL: redis://redis:6379/1
+      CELERY_RESULT_BACKEND: redis://redis:6379/2
+    depends_on:
+      redis:
+        condition: service_healthy
+
+
+  frontend:
+    build:
+      context: ./fann-fe
+      dockerfile: frontend.Dockerfile
+    container_name: fann-frontend
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      NEXT_TELEMETRY_DISABLED: "1"
+      HOSTNAME: 0.0.0.0
+
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: fann-redis
+    restart: always
+    command:
+      [
+        "redis-server",
+        "--appendonly",
+        "yes",
+        "--save",
+        "60",
+        "1000",
+        "--protected-mode",
+        "no"
+      ]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+
+volumes:
+  db_data:
+  redis_data:
+
+
+
+
+
+
+#version: '3.8'
+#
+#services:
+#  backend:
+#    build:
+#      context: .
+#      dockerfile: backend.Dockerfile
+#    container_name: fann-backend
+#    restart: always
+#    ports:
+#      - "8000:8000"
+#    env_file:
+#      - .env
+#    environment:
+#      DB_HOST: db
+#      DB_PORT: 5432
+#      TF_CPP_MIN_LOG_LEVEL: 2
+#      PYTHONUNBUFFERED: 1
+#      PYTHONDONTWRITEBYTECODE: 1
+#      IN_DOCKER: "1"
+#      # Redis / Celery
+#      REDIS_URL: redis://redis:6379/0
+#      CELERY_BROKER_URL: redis://redis:6379/1
+#      CELERY_RESULT_BACKEND: redis://redis:6379/2
+#    depends_on:
+#      db:
+#        condition: service_healthy
+#      redis:
+#        condition: service_healthy
+#    volumes:
+#      # >>> Host paths match your Nginx aliases
+#      - /var/www/apifann/media:/app/media
+#      - /var/www/apifann/staticfiles:/app/staticfiles
+#
+#  frontend:
+#    build:
+#      context: ./fann-fe
+#      dockerfile: frontend.Dockerfile
+#    container_name: fann-frontend
+#    restart: always
+#    ports:
+#      - "3000:3000"
+#    environment:
+#      NODE_ENV: production
+#      NEXT_TELEMETRY_DISABLED: "1"
+#      HOSTNAME: 0.0.0.0
+#
+#  db:
+#    image: postgres:15
+#    container_name: fann-db
+#    restart: always
+#    environment:
+#      POSTGRES_DB: ${DB_NAME}
+#      POSTGRES_USER: ${DB_USER}
+#      POSTGRES_PASSWORD: ${DB_PASSWORD}
+#    ports:
+#      - "5432:5432"
+#    volumes:
+#      - db_data:/var/lib/postgresql/data
+#    healthcheck:
+#      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME} -h 127.0.0.1"]
+#      interval: 5s
+#      timeout: 5s
+#      retries: 20
+#      start_period: 10s
+#
+#  redis:
+#    image: redis:7.2-alpine
+#    container_name: fann-redis
+#    restart: always
+#    command: ["redis-server", "--appendonly", "yes", "--save", "60 1000", "--protected-mode", "no"]
+#    volumes:
+#      - redis_data:/data
+#    healthcheck:
+#      test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
+#      interval: 5s
+#      timeout: 3s
+#      retries: 20
+#
+#volumes:
+#  db_data:
+#  redis_data:

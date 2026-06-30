@@ -1,0 +1,60 @@
+name: CI/CD to EC2 (tryfann)
+
+on:
+  push:
+    branches:
+      - main   # change if you deploy from a different branch
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'   # Next.js-friendly Node version
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build
+        run: npm run build
+
+      # If build fails, job stops and nothing is deployed
+      - name: Deploy to EC2 via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            set -e
+
+            # Ensure app directory exists
+            mkdir -p ${{ secrets.EC2_APP_DIR }}
+            cd ${{ secrets.EC2_APP_DIR }}
+
+            # First time: clone with token; afterwards: pull with token
+            if [ ! -d ".git" ]; then
+              git clone https://x-access-token:${{ secrets.GH_PAT }}@github.com/AspireX24/tryfann.git .
+            else
+              git remote set-url origin https://x-access-token:${{ secrets.GH_PAT }}@github.com/AspireX24/tryfann.git
+              # Stash any local changes (like package-lock.json) before pulling
+              git stash
+              # Fetch and reset to match remote exactly
+              git fetch origin main
+              git reset --hard origin/main
+            fi
+
+            # Install dependencies & build on server
+            npm install
+            npm run build
+
+            # Start or restart Next.js via PM2
+            pm2 restart tryfann || pm2 start npm --name "tryfann" -- run start
+            pm2 save

@@ -1,0 +1,14 @@
+KYC Verification Update
+
+Hi {{ user_name }},
+
+Unfortunately, we were unable to verify your KYC documentation at this time.
+
+Reason: {{ reason }}
+
+Please review the reason above and resubmit your documents with the correct information.
+
+If you have questions, please contact our support team.
+
+Best regards,
+The FANN Team

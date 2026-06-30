@@ -1,0 +1,14 @@
+New Offer Received!
+
+Hi {{ artist_name }},
+
+You've received a new offer for your artwork!
+
+Artwork: {{ artwork_title }}
+Offer Amount: ${{ offer_amount }}
+From: {{ customer_name }}
+
+Please review the offer and respond at your earliest convenience.
+
+Best regards,
+The FANN Team

@@ -1,0 +1,13 @@
+Bid Placed Successfully!
+
+Hi {{ customer_name }},
+
+Your bid has been placed successfully!
+
+Auction: {{ auction_title }}
+Your Bid: ${{ bid_amount }}
+
+We'll notify you if you're outbid or if you win the auction.
+
+Good luck!
+The FANN Team

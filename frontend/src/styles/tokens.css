@@ -1,0 +1,220 @@
+/* ============================================================================
+ * TryFANN — Design Token Foundation  (Step 1)
+ * ----------------------------------------------------------------------------
+ * THE single source of truth for every visual decision. No ad-hoc values
+ * anywhere else. Values are pixel-sampled from the Figma mockups + the
+ * canonical mockups/landing-redesign.html token set.
+ *
+ * Dark, warm, gallery-grade system:
+ *   - Cormorant Garamond (display) + DM Sans (body) + IBM Plex Sans Arabic (RTL)
+ *   - Gold (#C9A84C) is the single primary voltage.
+ *   - Sage (#6B8A7B) carries eyebrow taxonomy + trust microcopy.
+ *   - Forest (#2D493A) is the cream-panel secondary CTA.
+ *   - Exactly ONE shadow in the system, beneath framed artwork only.
+ *
+ * Tailwind v4: tokens are bridged to utilities via `@theme inline` so
+ * `bg-canvas-night`, `text-gold`, `font-display`, `rounded-pill` etc. all work.
+ * Fonts are loaded from index.html (not @import) to play nicely with Tailwind.
+ * ==========================================================================*/
+
+:root {
+  /* ── Dark surface ladder (Linear/Raycast lineage) ───────────────────── */
+  --canvas-night: #0B0B0D;   /* page background */
+  --canvas-deep:  #05080F;   /* deepest inset / vignette */
+  --surface-1:    #141417;   /* cards */
+  --surface-2:    #1A1A1F;   /* hover / elevated card */
+  --hairline:     #262629;   /* every card + divider edge (1px) */
+  --hairline-2:   #34343A;   /* slightly stronger divider */
+
+  /* ── Light / interlude surfaces ─────────────────────────────────────── */
+  --canvas-cream: #F5F0E8;   /* manifesto + CTA interlude bands */
+  --canvas-cream-2:#ECE4D7;  /* nested cream surface */
+  --canvas:       #FFFFFF;
+
+  /* ── Gold — the primary voltage ─────────────────────────────────────── */
+  --gold:          #C9A84C;
+  --gold-hover:    #D6B85C;
+  --gold-pressed:  #A98237;
+  --gold-deep:     #8B6F2C;                    /* eyebrow on cream */
+  --gold-soft:     rgba(201, 168, 76, 0.12);   /* icon-chip / eyebrow-pill fill */
+  --gold-soft-2:   rgba(201, 168, 76, 0.20);
+  --gold-hairline: rgba(201, 168, 76, 0.32);   /* gold borders */
+
+  /* ── Green — secondary voltage (pixel-sampled from mockups) ─────────── */
+  --sage:          #6B8A7B;   /* eyebrow labels + trust microcopy on dark */
+  --sage-bright:   #8FB29E;
+  --forest:        #2D493A;   /* secondary CTA fill on cream panels */
+  --forest-hover:  #365A47;
+
+  /* ── Text on dark ───────────────────────────────────────────────────── */
+  --ink-on-dark:   #F5F0E8;                    /* headlines / primary */
+  --ink-on-dark-2: rgba(245, 240, 232, 0.65);  /* body */
+  --ink-on-dark-3: rgba(245, 240, 232, 0.40);  /* meta / tertiary */
+  --ink-on-dark-4: rgba(245, 240, 232, 0.16);  /* faint lines on dark */
+
+  /* ── Text on light / cream ──────────────────────────────────────────── */
+  --ink:        #0B0B0D;
+  --ink-mute:   #5B5854;
+  --ink-faint:  #8B847D;
+
+  /* ── Status semantics (pills, ledger) ───────────────────────────────── */
+  --status-completed-fg:     #8FB29E;
+  --status-completed-bg:     rgba(107, 138, 123, 0.14);
+  --status-completed-border: rgba(107, 138, 123, 0.42);
+  --status-review-fg:        #D6B85C;
+  --status-review-bg:        rgba(201, 168, 76, 0.12);
+  --status-review-border:    rgba(201, 168, 76, 0.36);
+  --status-pending-fg:       rgba(245, 240, 232, 0.55);
+  --status-pending-bg:       rgba(245, 240, 232, 0.05);
+  --status-pending-border:   rgba(245, 240, 232, 0.18);
+  --status-rejected-fg:      #D98A78;
+  --status-rejected-bg:      rgba(193, 92, 70, 0.13);
+  --status-rejected-border:  rgba(193, 92, 70, 0.36);
+  --status-flagged-fg:       #E0A93F;
+  --status-flagged-bg:       rgba(224, 169, 63, 0.13);
+  --status-flagged-border:   rgba(224, 169, 63, 0.38);
+
+  /* ── Type faces ─────────────────────────────────────────────────────── */
+  --font-display: "Cormorant Garamond", "Playfair Display", Georgia, serif;
+  --font-body:    "DM Sans", "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-arabic:  "IBM Plex Sans Arabic", "DM Sans", system-ui, sans-serif;
+
+  /* ── Type scale (fluid) ─────────────────────────────────────────────── */
+  --text-display-xl: clamp(2.75rem, 1.6rem + 5.1vw, 4.75rem); /* hero        */
+  --text-display-lg: clamp(2.1rem, 1.4rem + 3.1vw, 3.25rem);  /* section h2  */
+  --text-display-md: 1.75rem;                                  /* card title  */
+  --text-display-sm: 1.375rem;                                 /* sub-head    */
+  --text-body-lg:    1.125rem;
+  --text-body:       1rem;
+  --text-body-sm:    0.875rem;
+  --text-eyebrow:    0.6875rem;   /* 11px uppercase taxonomy label */
+  --text-ticker:     0.75rem;     /* 12px ticker / meta            */
+  --lh-display:      1.06;
+  --lh-snug:         1.2;
+  --lh-body:         1.6;
+  --tracking-display:-0.01em;
+  --tracking-eyebrow: 0.18em;
+
+  /* ── Radius ─────────────────────────────────────────────────────────── */
+  --r-sm:   8px;
+  --r-md:   12px;
+  --r-lg:   16px;
+  --r-xl:   20px;
+  --r-pill: 9999px;
+
+  /* ── Spacing rhythm ─────────────────────────────────────────────────── */
+  --space-section: clamp(80px, 12vw, 160px);   /* band top/bottom */
+  --container-max: 1200px;
+  --container-pad: clamp(20px, 4vw, 48px);
+
+  /* ── Elevation — the ONE shadow (beneath framed artwork only) ───────── */
+  --shadow-artwork: 0 16px 48px rgba(0, 0, 0, 0.32), 0 4px 16px rgba(0, 0, 0, 0.24);
+  --shadow-modal:   0 24px 64px rgba(0, 0, 0, 0.55), 0 8px 24px rgba(0, 0, 0, 0.4);
+
+  /* ── Motion ─────────────────────────────────────────────────────────── */
+  --ease-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur: 0.22s;
+}
+
+/* RTL — swap to the Arabic face for both roles (parity on every screen) */
+[dir="rtl"] {
+  --font-display: var(--font-arabic);
+  --font-body:    var(--font-arabic);
+}
+
+/* ── Tailwind v4 bridge: expose tokens as utilities ───────────────────── */
+@theme inline {
+  --color-canvas-night: var(--canvas-night);
+  --color-canvas-deep:  var(--canvas-deep);
+  --color-surface-1:    var(--surface-1);
+  --color-surface-2:    var(--surface-2);
+  --color-hairline:     var(--hairline);
+  --color-hairline-2:   var(--hairline-2);
+  --color-canvas-cream: var(--canvas-cream);
+  --color-canvas-cream-2: var(--canvas-cream-2);
+
+  --color-gold:          var(--gold);
+  --color-gold-hover:    var(--gold-hover);
+  --color-gold-pressed:  var(--gold-pressed);
+  --color-gold-deep:     var(--gold-deep);
+
+  --color-sage:        var(--sage);
+  --color-sage-bright: var(--sage-bright);
+  --color-forest:      var(--forest);
+  --color-forest-hover:var(--forest-hover);
+
+  --color-ink-on-dark:   var(--ink-on-dark);
+  --color-ink-on-dark-2: var(--ink-on-dark-2);
+  --color-ink-on-dark-3: var(--ink-on-dark-3);
+  --color-ink:           var(--ink);
+  --color-ink-mute:      var(--ink-mute);
+  --color-ink-faint:     var(--ink-faint);
+
+  --font-display: var(--font-display);
+  --font-body:    var(--font-body);
+  --font-arabic:  var(--font-arabic);
+
+  --radius-sm:   var(--r-sm);
+  --radius-md:   var(--r-md);
+  --radius-lg:   var(--r-lg);
+  --radius-xl:   var(--r-xl);
+  --radius-pill: var(--r-pill);
+}
+
+/* ============================================================================
+ * Base treatment — opt-in via `.tf-root` so not-yet-rebuilt screens are
+ * untouched during the phased rebuild. Future rebuilt screens add `.tf-root`.
+ * ==========================================================================*/
+.tf-root {
+  background: var(--canvas-night);
+  color: var(--ink-on-dark);
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  line-height: var(--lh-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: "kern", "liga";
+}
+.tf-root h1, .tf-root h2, .tf-root h3, .tf-root h4 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  line-height: var(--lh-snug);
+  letter-spacing: var(--tracking-display);
+  color: var(--ink-on-dark);
+  margin: 0;
+}
+.tf-root ::selection { background: var(--gold); color: var(--canvas-night); }
+
+/* Gold focus ring — accessibility baseline for every interactive element */
+.tf-root :focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* ── Token-expressing helpers (full components arrive in Step 2) ───────── */
+.tf-eyebrow {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: var(--text-eyebrow);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--sage);
+}
+.tf-display-accent { font-style: italic; color: var(--gold); font-weight: 500; }
+.tf-ticker {
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: var(--text-ticker);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--ink-on-dark-3);
+}
+.tf-tnum { font-variant-numeric: tabular-nums; }
+
+@media (prefers-reduced-motion: reduce) {
+  .tf-root *, .tf-root *::before, .tf-root *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}

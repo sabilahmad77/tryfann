@@ -1,0 +1,14 @@
+{% extends 'emails/base.html' %}
+{% block content %}
+<h2>Purchase Completed Successfully!</h2>
+<p>Hi {{ customer_name }},</p>
+<p>Thank you for your purchase! Your order has been confirmed.</p>
+<div class="info-box">
+    <strong>Order ID:</strong> #{{ order_id }}<br>
+    <strong>Artwork:</strong> {{ artwork_title }}<br>
+    <strong>Amount:</strong> ${{ amount }}
+</div>
+<p>You can track your order status and download your artwork from your dashboard.</p>
+<a href="{{ platform_url }}/orders/{{ order_id }}" class="button">View Order</a>
+<p>Thank you for supporting artists on FANN!<br>The FANN Team</p>
+{% endblock %}

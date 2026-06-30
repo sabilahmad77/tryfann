@@ -1,0 +1,12 @@
+Account Blocked
+
+Hi {{ user_name }},
+
+Your account has been temporarily blocked.
+
+Reason: {{ reason }}
+
+If you believe this is an error or would like to appeal this decision, please contact our support team immediately.
+
+Best regards,
+The FANN Team

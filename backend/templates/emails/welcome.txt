@@ -1,0 +1,22 @@
+Welcome to FANN!
+
+Hi {{ user_name }},
+
+Welcome to FANN Art Platform! We're excited to have you join our community of artists and art enthusiasts.
+
+Getting Started:
+
+1. Complete Your Profile
+   Add your information and preferences to personalize your experience.
+
+2. Complete KYC Verification
+   Submit your documents to unlock all platform features.
+
+3. Start Exploring
+   Browse amazing artworks or upload your own creations!
+
+If you have any questions, our support team is here to help!
+
+Best regards,
+The FANN Team
+

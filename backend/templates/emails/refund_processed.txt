@@ -1,0 +1,13 @@
+Refund Processed
+
+Hi {{ user_name }},
+
+Your refund has been processed successfully.
+
+Order ID: #{{ order_id }}
+Refund Amount: ${{ amount }}
+
+The refund will appear in your original payment method within 5-10 business days.
+
+Best regards,
+The FANN Team

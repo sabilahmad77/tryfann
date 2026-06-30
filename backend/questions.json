@@ -1,0 +1,68 @@
+[
+  {
+    "question": "What condition defines f(z) as a function of a complex variable?",
+    "choices": [
+      "f(z) takes multiple values for a given z",
+      "f(z) takes a unique value for each z",
+      "f(z) is only defined for real numbers",
+      "f(z) changes based on the integer n"
+    ],
+    "correct_answer": "f(z) takes a unique value for each z",
+    "difficulty": "medium"
+  },
+  {
+    "question": "Which of the following functions does NOT represent a unique value for complex numbers?",
+    "choices": [
+      "z^2 where z is a complex number",
+      "|z| (magnitude of z)",
+      "z^(1/3) where z is a complex number",
+      "arg(z) (argument of z)"
+    ],
+    "correct_answer": "z^(1/3) where z is a complex number",
+    "difficulty": "medium"
+  },
+  {
+    "question": "According to the excerpt, what is the principal value of z^(1/3)?",
+    "choices": [
+      "Any integer power of 2π added to the exponent",
+      "The unique negative root",
+      "One of the three cube roots specifically defined",
+      "The square root of the absolute value of z"
+    ],
+    "correct_answer": "One of the three cube roots specifically defined",
+    "difficulty": "medium"
+  },
+  {
+    "question": "How is the function e^z represented when z is expressed as sigma + j omega?",
+    "choices": [
+      "e^(sigma + j omega) = e^sigma * e^(j omega)",
+      "e^(sigma + j omega) = e^(sigma) + e^(omega)",
+      "e^(sigma + j omega) = sigma + j omega",
+      "e^(sigma + j omega) = e^(sigma) - e^(j omega)"
+    ],
+    "correct_answer": "e^(sigma + j omega) = e^sigma * e^(j omega)",
+    "difficulty": "medium"
+  },
+  {
+    "question": "Which values does the argument of z lie between when z is in the first quadrant?",
+    "choices": [
+      "0 and π/2",
+      "0 and π",
+      "-π/2 and π/2",
+      "-π and 0"
+    ],
+    "correct_answer": "0 and π/2",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What conclusion can be drawn about functions of a complex variable and integer powers in the excerpt?",
+    "choices": [
+      "Only integer powers can yield unique function values",
+      "Functions can be defined without any restrictions",
+      "Floating point numbers are always non-unique",
+      "Non-integer power functions are always functions"
+    ],
+    "correct_answer": "Only integer powers can yield unique function values",
+    "difficulty": "medium"
+  }
+]

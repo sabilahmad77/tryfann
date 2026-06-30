@@ -1,0 +1,12 @@
+{% extends 'emails/base.html' %}
+{% block content %}
+<h2>Your Offer Has Been Accepted!</h2>
+<p>Hi {{ customer_name }},</p>
+<p>Great news! The artist has accepted your offer!</p>
+<div class="info-box">
+    <strong>Artwork:</strong> {{ artwork_title }}
+</div>
+<p>Please proceed to complete your payment.</p>
+<a href="{{ platform_url }}/checkout" class="button">Complete Payment</a>
+<p>Best regards,<br>The FANN Team</p>
+{% endblock %}

@@ -1,0 +1,12 @@
+Your Offer Has Been Accepted!
+
+Hi {{ customer_name }},
+
+Great news! The artist has accepted your offer!
+
+Artwork: {{ artwork_title }}
+
+Please proceed to complete your payment.
+
+Best regards,
+The FANN Team

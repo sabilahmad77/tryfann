@@ -1,0 +1,138 @@
+/* ============================================================================
+ * FANN Landing — Design Tokens (single source of truth for the redesign)
+ * ============================================================================
+ * Verified against the live app.fann.art (getComputedStyle) + repo globals.css.
+ * Scoped to `.fann-landing` so it never leaks into the rest of the app.
+ *
+ * Palette confirmed live:  bg rgb(11,11,13)=#0B0B0D · gold rgb(197,155,72)=#C59B48
+ *                          text rgb(242,242,243)=#F2F2F3 · display Playfair 900 · body Inter
+ * Decision: gold-only restraint (teal/cyan retired from the landing surface).
+ * ========================================================================== */
+
+.fann-landing {
+  /* Surfaces (dark ladder) */
+  --ink-void:   #0B0B0D;   /* canvas / gallery wall */
+  --ink-panel:  #121217;   /* section panels */
+  --ink-card:   #191922;   /* cards, certificate panel */
+  --ink-elev:   #222231;   /* hover / elevated */
+
+  /* Accent — the single chromatic event */
+  --gold:       #C59B48;
+  --gold-hi:    #D6AE5A;
+  --gold-deep:  #A98237;
+  --gold-edge:  rgba(197, 155, 72, 0.22);
+  --gold-soft:  rgba(197, 155, 72, 0.10);
+
+  /* Ink on dark */
+  --bone:    #F2F2F3;
+  --bone-2:  rgba(242, 240, 243, 0.66);
+  --bone-3:  rgba(242, 240, 243, 0.40);
+
+  /* Lines */
+  --hairline: #2A2A3A;
+
+  /* Type */
+  --font-display: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+  /* Radius */
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --r-xl: 22px;
+  --r-pill: 9999px;
+
+  /* Elevation — the ONE real shadow lives under artwork */
+  --shadow-artwork: 0 28px 64px -16px rgba(0, 0, 0, 0.7), 0 8px 24px -10px rgba(0, 0, 0, 0.55);
+  --shadow-card: 0 18px 44px -18px rgba(0, 0, 0, 0.62);
+
+  background-color: var(--ink-void);
+  color: var(--bone);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Arabic / RTL font swap */
+[dir="rtl"] .fann-landing,
+.fann-landing[dir="rtl"] {
+  --font-display: 'IBM Plex Sans Arabic', 'Playfair Display', serif;
+  --font-body: 'IBM Plex Sans Arabic', 'Inter', sans-serif;
+}
+
+/* Type-role helpers */
+.fann-display {
+  font-family: var(--font-display);
+  font-weight: 900;
+  letter-spacing: -0.025em;
+  line-height: 1.04;
+}
+.fann-display-italic {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-style: italic;
+  letter-spacing: -0.02em;
+  line-height: 1.04;
+}
+.fann-eyebrow {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 0.6875rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+.fann-meta {
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 0.6875rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+[dir="rtl"] .fann-eyebrow,
+[dir="rtl"] .fann-meta { letter-spacing: 0; }
+
+.fann-tnum { font-feature-settings: "tnum", "kern"; }
+
+/* Visible keyboard focus (AA) */
+.fann-focus:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+/* FAQ <details> disclosure */
+.fann-landing .fann-faq summary { list-style: none; }
+.fann-landing .fann-faq summary::-webkit-details-marker { display: none; }
+.fann-landing .fann-faq[open] summary svg { transform: rotate(45deg); }
+
+/* Honor reduced motion at the CSS layer too */
+@media (prefers-reduced-motion: reduce) {
+  .fann-landing * {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* ----------------------------------------------------------------------------
+ * Legacy bridge — inside the .fann-landing scope, re-skin the app's older
+ * utility surfaces onto the token system (onboarding step cards etc.).
+ * Lets multi-thousand-line step components inherit the brand without
+ * rewriting every class; the Step-3 sweep retires stragglers.
+ * -------------------------------------------------------------------------- */
+.fann-landing .glass {
+  background: var(--ink-card) !important;
+  border-color: var(--hairline) !important;
+  backdrop-filter: none !important;
+  box-shadow: var(--shadow-card);
+}
+.fann-landing .text-amber-400,
+.fann-landing .text-amber-300,
+.fann-landing .text-amber-500 {
+  color: var(--gold) !important;
+}
+.fann-landing h1:not(.fann-display):not([class*="text-"]),
+.fann-landing h2:not(.fann-display):not([class*="text-"]) {
+  font-family: var(--font-display);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}

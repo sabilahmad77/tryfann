@@ -1,0 +1,13 @@
+New Dispute Requires Attention
+
+Hi {{ admin_name }},
+
+A new dispute has been opened and requires admin review.
+
+Dispute ID: {{ dispute_id }}
+Order ID: #{{ order_id }}
+
+Please review the dispute details and take appropriate action.
+
+Best regards,
+FANN System

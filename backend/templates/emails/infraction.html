@@ -1,0 +1,13 @@
+{% extends 'emails/base.html' %}
+{% block content %}
+<h2>⚠️ Infraction Notice</h2>
+<p>Hi {{ customer_name }},</p>
+<p>This is to inform you that you have received an infraction on your account.</p>
+<div class="info-box">
+    <strong>Reason:</strong> {{ reason }}
+</div>
+<p>Please review our Terms of Service and Community Guidelines to avoid future infractions. Multiple infractions may result in account suspension.</p>
+<a href="{{ platform_url }}/terms" class="button">Review Terms of Service</a>
+<p>If you believe this is an error, please contact our support team.</p>
+<p>Best regards,<br>The FANN Team</p>
+{% endblock %}

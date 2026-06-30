@@ -1,0 +1,55 @@
+from django.contrib import admin
+
+from fann.artist.models import (
+    Art,
+    Auction,
+    AuctionBid,
+    Order,
+    PaymentTransaction,
+    Payout,
+    ArtComment,
+    ArtOwner,
+    ArtReviews,
+    ArtistFollow,
+    ArtistShop,
+    OrderDispute,
+    DisputeConversation,
+    DisputeMessage,
+    ArtGallery,
+    OrderLabel,
+    Event,
+    BuyerRSVP,
+    BuyerOffers,
+    UserDiscussion,
+    DiscussionReply,
+    DiscussionView,
+    UserBoard,
+    UserBoardCollection,
+    BuyerCounterOffers,
+)
+
+admin.site.register(Art)
+admin.site.register(Auction)
+admin.site.register(AuctionBid)
+admin.site.register(Order)
+admin.site.register(PaymentTransaction)
+admin.site.register(Payout)
+admin.site.register(ArtComment)
+admin.site.register(ArtOwner)
+admin.site.register(ArtReviews)
+admin.site.register(ArtistFollow)
+admin.site.register(ArtistShop)
+admin.site.register(OrderDispute)
+admin.site.register(DisputeConversation)
+admin.site.register(DisputeMessage)
+admin.site.register(ArtGallery)
+admin.site.register(OrderLabel)
+admin.site.register(Event)
+admin.site.register(BuyerRSVP)
+admin.site.register(BuyerOffers)
+admin.site.register(UserDiscussion)
+admin.site.register(DiscussionReply)
+admin.site.register(DiscussionView)
+admin.site.register(UserBoard)
+admin.site.register(UserBoardCollection)
+admin.site.register(BuyerCounterOffers)

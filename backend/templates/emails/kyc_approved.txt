@@ -1,0 +1,14 @@
+KYC Approved!
+
+Hi {{ user_name }},
+
+Great news! Your KYC verification has been approved.
+
+You now have full access to all platform features, including:
+- Buying and selling artwork
+- Participating in auctions
+- Making and receiving offers
+- All premium features
+
+Welcome to FANN!
+The FANN Team

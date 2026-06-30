@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>{{ platform_name }} — Invitation from {{ organization_name }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+      body { margin:0; padding:0; background:#0f0f14; }
+      table { border-collapse:collapse; }
+      a { color:#ffd166; }
+
+      .wrap { width:100%; padding:24px 12px; background:#0f0f14; }
+      .container { width:100%; max-width:640px; margin:0 auto; }
+      .card {
+        background:#151522; color:#eaeaf7;
+        border:1px solid #24243a; border-radius:12px;
+        box-shadow:0 2px 12px rgba(0,0,0,0.3);
+      }
+      .pad { padding:32px; }
+
+      .h1 { font-size:22px; line-height:30px; font-weight:800; margin:0 0 8px; color:#ffffff; }
+      .p { font-size:15px; line-height:24px; margin:0 0 16px; color:#eaeaf7; }
+      .muted { color:#b8b8d6; }
+      .sep { border-top:1px solid #24243a; margin:20px 0; }
+
+      .btn {
+        background:#ffd166; color:#0f0f14 !important; text-decoration:none;
+        padding:14px 22px; display:inline-block; border-radius:10px; font-weight:800;
+      }
+
+      ul { margin:0; padding:0 0 0 18px; }
+      li { margin:0 0 8px; }
+
+      .foot { font-size:12px; color:#8d8db5; }
+
+      @media (max-width:480px){ .pad { padding:20px !important; } }
+    </style>
+  </head>
+  <body>
+    <table role="presentation" class="wrap" width="100%" cellpadding="0" cellspacing="0">
+      <tr>
+        <td align="center">
+          <table role="presentation" class="container" width="100%" cellpadding="0" cellspacing="0">
+            <tr>
+              <td class="card pad">
+                <h1 class="h1">{{ organization_name }} has invited you to showcase your art on {{ platform_name }}.</h1>
+                <p class="p muted">This is a special opportunity to connect with collectors and expand your reach by publishing your artworks on our marketplace.</p>
+
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:8px 0 6px;">
+                  <tr><td class="p">
+                    <ul>
+                      <li><strong>Royalties</strong> on eligible resales</li>
+                      <li><strong>No listing fees</strong> and transparent pricing</li>
+                      <li><strong>Artist tools:</strong> analytics, AR preview, easy listing</li>
+                      <li><strong>Strong demand</strong> with active collectors & organizations</li>
+                    </ul>
+                  </td></tr>
+                </table>
+
+                <!-- CTA -->
+                <table role="presentation" cellpadding="0" cellspacing="0" style="margin:18px 0 10px;">
+                  <tr><td>
+                    <a href="{{ cta_url }}" class="btn">Accept invitation & start selling</a>
+                  </td></tr>
+                </table>
+
+                <p class="p muted" style="font-size:12px; margin-top:6px;">
+                  Or paste this link in your browser:<br>
+                  <a href="{{ cta_url }}">{{ cta_url }}</a>
+                </p>
+
+                <div class="sep"></div>
+
+                <p class="p" style="margin:0 0 8px;"><strong>What happens next?</strong></p>
+                <ol style="padding-left:18px; margin:0 0 16px; color:#eaeaf7;">
+                  <li>Create your seller profile.</li>
+                  <li>Upload artworks (images, title, price, royalty).</li>
+                  <li>Publish & share — we’ll handle payments and delivery.</li>
+                </ol>
+
+                <p class="p" style="margin-top:16px;">Questions? Just reply to this email or contact
+                  <a href="mailto:{{ support_email }}">{{ support_email }}</a>.
+                </p>
+
+                <p class="p muted" style="margin:0;">— Team {{ platform_name }}</p>
+              </td>
+            </tr>
+
+            <tr>
+              <td align="center" style="padding:16px 8px 0;">
+                <p class="foot">
+                  You received this because {{ organization_name }} invited you to join {{ platform_name }}.
+                  <br>
+                  <a href="{{ unsubscribe_url }}" style="color:#8d8db5;">Unsubscribe</a> •
+                  <a href="{{ privacy_url }}" style="color:#8d8db5;">Privacy</a>
+                </p>
+              </td>
+            </tr>
+
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

@@ -1,0 +1,12 @@
+Offer Update
+
+Hi {{ customer_name }},
+
+Unfortunately, your offer for the following artwork has been declined by the artist.
+
+Artwork: {{ artwork_title }}
+
+Don't worry! There are many other amazing artworks available on FANN.
+
+Best regards,
+The FANN Team

@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>{{ platform_name }} — Verify your email</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+      body { margin:0; padding:0; background:#0f0f14; }
+      table { border-collapse:collapse; }
+      a { color:#ffd166; }
+
+      .wrap { width:100%; padding:24px 12px; background:#0f0f14; }
+      .container { width:100%; max-width:640px; margin:0 auto; }
+      .card {
+        background:#151522; color:#eaeaf7;
+        border:1px solid #24243a; border-radius:12px;
+        box-shadow:0 2px 12px rgba(0,0,0,0.3);
+      }
+      .pad { padding:32px; }
+
+      .h1 { font-size:22px; line-height:30px; font-weight:800; margin:0 0 8px; color:#ffffff; }
+      .p { font-size:15px; line-height:24px; margin:0 0 16px; color:#eaeaf7; }
+      .muted { color:#b8b8d6; }
+      .sep { border-top:1px solid #24243a; margin:20px 0; }
+
+      .btn {
+        background:#ffd166; color:#0f0f14 !important; text-decoration:none;
+        padding:14px 22px; display:inline-block; border-radius:10px; font-weight:800;
+      }
+
+      ul { margin:0; padding:0 0 0 18px; }
+      li { margin:0 0 8px; }
+
+      .foot { font-size:12px; color:#8d8db5; }
+
+      @media (max-width:480px){ .pad { padding:20px !important; } }
+    </style>
+  </head>
+  <body>
+    <table role="presentation" class="wrap" width="100%" cellpadding="0" cellspacing="0">
+      <tr>
+        <td align="center">
+          <table role="presentation" class="container" width="100%" cellpadding="0" cellspacing="0">
+            <tr>
+              <td class="card pad">
+                <h1 class="h1">Confirm your email for {{ platform_name }}</h1>
+                <p class="p muted">Hi {{ first_name | default:"there" }},</p>
+                <p class="p">Thanks for creating an account with {{ platform_name }}. Please verify your email address to activate your account and keep it secure.</p>
+
+                <!-- CTA -->
+                <table role="presentation" cellpadding="0" cellspacing="0" style="margin:18px 0 10px;">
+                  <tr><td>
+                    <a href="{{ verification_url }}" class="btn">Verify email</a>
+                  </td></tr>
+                </table>
+
+                <p class="p muted" style="font-size:12px; margin-top:6px;">
+                  Or paste this link in your browser:<br>
+                  <a href="{{ verification_url }}">{{ verification_url }}</a>
+                </p>
+
+                <div class="sep"></div>
+
+                <p class="p" style="margin:0 0 8px;"><strong>Why verify?</strong></p>
+                <ul>
+                  <li>Secure your account and enable login.</li>
+                  <li>Access creator tools and marketplace features.</li>
+                  <li>Receive important updates from our team.</li>
+                </ul>
+
+                <p class="p" style="margin-top:16px;">
+                  This link expires in 5 minutes for your security. If it expires, you can request a new one from the sign-in page.
+                </p>
+
+                <p class="p muted" style="margin:0;">Didn’t sign up? You can safely ignore this email—no action will be taken.</p>
+
+                <p class="p" style="margin-top:16px;">Need help? Reply to this email or contact
+                  <a href="mailto:{{ support_email }}">{{ support_email }}</a>.
+                </p>
+
+                <p class="p muted" style="margin:0;">— Team {{ platform_name }}</p>
+              </td>
+            </tr>
+
+            <tr>
+              <td align="center" style="padding:16px 8px 0;">
+                <p class="foot">
+                  You’re receiving this message because an account was created on {{ platform_name }} using {{ user_email }}.
+                  <br>
+                  <a href="{{ privacy_url }}" style="color:#8d8db5;">Privacy</a> •
+                  <a href="{{ terms_url }}" style="color:#8d8db5;">Terms</a>
+                </p>
+              </td>
+            </tr>
+
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

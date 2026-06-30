@@ -1,0 +1,20 @@
+Your Daily FANN Digest
+
+Hi {{ user_name }},
+
+Here's what happened on FANN in the last 24 hours:
+
+You have {{ unread_count }} unread notification{{ unread_count|pluralize }}
+
+Recent Notifications:
+{% for notification in notifications %}
+- {{ notification.get_type_display }}: {{ notification.message }}
+  {{ notification.created_at|date:"M d, Y g:i A" }}
+{% endfor %}
+
+View all notifications at: {{ platform_url }}/notifications
+
+To stop receiving daily digests, update your notification preferences in your account settings.
+
+Best regards,
+The FANN Team

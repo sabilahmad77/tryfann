@@ -1,0 +1,20 @@
+# Local-only dependency set for running the TryFann lead-qualification funnel
+# (market_final + users + notifications) on SQLite. Deliberately EXCLUDES the
+# ML / blockchain giants (torch, tensorflow, faiss, opencv, catboost, web3,
+# psycopg2, daphne, channels_redis, gunicorn) — not needed for the funnel.
+# Never pushed. See settings_local.py / urls_local.py.
+
+Django==4.2.10
+djangorestframework==3.14.0
+djangorestframework-simplejwt==5.5.1
+PyJWT==2.10.1
+django-cors-headers
+channels==4.1.0
+celery==5.3.6
+redis==5.0.4
+Pillow>=10.0.0
+python-dotenv==1.0.1
+environs==9.5.0
+django-extensions==3.2.3
+django-crontab==0.7.1
+tzdata==2023.3

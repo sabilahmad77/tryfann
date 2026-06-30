@@ -1,0 +1,13 @@
+{% extends 'emails/base.html' %}
+{% block content %}
+<h2>Bid Placed Successfully!</h2>
+<p>Hi {{ customer_name }},</p>
+<p>Your bid has been placed successfully!</p>
+<div class="info-box">
+    <strong>Auction:</strong> {{ auction_title }}<br>
+    <strong>Your Bid:</strong> ${{ bid_amount }}
+</div>
+<p>We'll notify you if you're outbid or if you win the auction.</p>
+<a href="{{ platform_url }}/auctions" class="button">View Auction</a>
+<p>Good luck!<br>The FANN Team</p>
+{% endblock %}

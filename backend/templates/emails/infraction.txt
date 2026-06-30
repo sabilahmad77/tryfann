@@ -1,0 +1,14 @@
+Infraction Notice
+
+Hi {{ customer_name }},
+
+This is to inform you that you have received an infraction on your account.
+
+Reason: {{ reason }}
+
+Please review our Terms of Service and Community Guidelines to avoid future infractions. Multiple infractions may result in account suspension.
+
+If you believe this is an error, please contact our support team.
+
+Best regards,
+The FANN Team

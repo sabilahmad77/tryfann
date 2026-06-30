@@ -1,0 +1,13 @@
+{% extends 'emails/base.html' %}
+{% block content %}
+<h2>⚠️ New Dispute Requires Attention</h2>
+<p>Hi {{ admin_name }},</p>
+<p>A new dispute has been opened and requires admin review.</p>
+<div class="info-box">
+    <strong>Dispute ID:</strong> {{ dispute_id }}<br>
+    <strong>Order ID:</strong> #{{ order_id }}
+</div>
+<p>Please review the dispute details and take appropriate action.</p>
+<a href="{{ platform_url }}/admin/disputes/{{ dispute_id }}" class="button">Review Dispute</a>
+<p>Best regards,<br>FANN System</p>
+{% endblock %}

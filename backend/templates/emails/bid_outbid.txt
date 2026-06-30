@@ -1,0 +1,13 @@
+You've Been Outbid
+
+Hi {{ customer_name }},
+
+Someone has placed a higher bid on the auction you're participating in.
+
+Auction: {{ auction_title }}
+Current Highest Bid: ${{ new_bid_amount }}
+
+Would you like to place a higher bid?
+
+Best regards,
+The FANN Team

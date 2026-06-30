@@ -1,0 +1,13 @@
+{% extends 'emails/base.html' %}
+{% block content %}
+<h2>You've Been Outbid</h2>
+<p>Hi {{ customer_name }},</p>
+<p>Someone has placed a higher bid on the auction you're participating in.</p>
+<div class="info-box">
+    <strong>Auction:</strong> {{ auction_title }}<br>
+    <strong>Current Highest Bid:</strong> ${{ new_bid_amount }}
+</div>
+<p>Would you like to place a higher bid?</p>
+<a href="{{ platform_url }}/auctions" class="button">Place New Bid</a>
+<p>Best regards,<br>The FANN Team</p>
+{% endblock %}

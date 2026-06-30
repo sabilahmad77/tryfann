@@ -1,0 +1,14 @@
+{% extends 'emails/base.html' %}
+{% block content %}
+<h2>🎉 Congratulations! Your Artwork Sold!</h2>
+<p>Hi {{ artist_name }},</p>
+<p>Fantastic news! Your artwork has been sold!</p>
+<div class="info-box">
+    <strong>Artwork:</strong> {{ artwork_title }}<br>
+    <strong>Buyer:</strong> {{ buyer_name }}<br>
+    <strong>Sale Price:</strong> ${{ sale_price }}
+</div>
+<p>The payment will be processed and transferred to your account according to our standard payment schedule.</p>
+<a href="{{ platform_url }}/sales" class="button">View Sale Details</a>
+<p>Congratulations on your sale!<br>The FANN Team</p>
+{% endblock %}

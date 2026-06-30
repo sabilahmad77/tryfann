@@ -1,0 +1,732 @@
+/* ============================================================================
+ * Typography CSS Variables
+ * ============================================================================
+ * 
+ * Font Selection:
+ * - Sora: Premium modern font for headings (English)
+ * - Inter: Clean, readable font for body text (English)
+ * - IBM Plex Sans Arabic: Premium Arabic font for RTL content
+ * 
+ * Loading Strategy:
+ * - Fonts are loaded via <link> tag in index.html for better performance
+ * - display=swap: Show fallback font immediately, swap when loaded
+ * - Preconnect: Added in index.html for faster DNS resolution
+ * 
+ * Note: Fonts are NOT imported here via @import to avoid conflicts with
+ * Tailwind v4 processing. All fonts are loaded from index.html.
+ */
+:root {
+  /* Font Families */
+  --font-heading: 'Playfair Display', serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-arabic-heading: 'IBM Plex Sans Arabic', 'Playfair Display', serif;
+  --font-arabic-body: 'IBM Plex Sans Arabic', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* RTL Language Support - Arabic Typography */
+[dir="rtl"] {
+  --font-heading: var(--font-arabic-heading);
+  --font-body: var(--font-arabic-body);
+}
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --font-size: 16px;
+  /* FANN Color Palette - Dark Purple, Bright Gold, White, Teal */
+
+  /* PRIMARY COLORS - New Gold System */
+  --primary: #C59B48;
+  /* Primary Gold (Warm) - Primary CTA fill, key highlights, icons, emphasis words */
+  --primary-light: #D6AE5A;
+  /* Gold Hover - CTA hover, active chips */
+  --primary-dark: #A98237;
+  /* Gold Pressed - CTA pressed/down state */
+  --primary-foreground: #0B0B0D;
+  /* True Black (Base) - Dark background for gold text */
+
+  /* SECONDARY COLORS - FANN Teal System */
+  --secondary: #45e3d3;
+  /* Main teal */
+  --secondary-light: #5ee7d8;
+  /* Lighter teal */
+  --secondary-dark: #3bc4b5;
+  /* Darker teal */
+  --secondary-foreground: #121217;
+  /* Dark background for teal text */
+
+  /* ACCENT COLORS */
+  --accent: #ffc936;
+  /* Accent gold */
+  --accent-pink: #fface3;
+  /* Accent pink */
+  --accent-purple: #9375b5;
+  /* Accent purple */
+  --accent-foreground: #121217;
+
+  /* BACKGROUND COLORS - New Charcoal System */
+  --background: #0B0B0D;
+  /* True Black (Base) - Main page background */
+  --background-dark: #121217;
+  /* Charcoal (Section panels) - Large section blocks, hero overlay, sticky nav background */
+  --background-secondary: #191922;
+  /* Soft Charcoal (Cards) - Cards, modals, feature boxes */
+  --background-darker: #222231;
+  /* Elevated Charcoal (Hover/Active surfaces) - Hover state for cards, dropdowns, active tiles */
+
+  /* CARD COLORS */
+  --card: #191922;
+  /* Soft Charcoal (Cards) - Cards, modals, feature boxes */
+  --card-foreground: #F2F2F3;
+  /* Primary Text (High) - Main headings, key labels on cards */
+  --card-transparent: rgba(255, 255, 255, 0.06);
+  /* Keep as is for transparency effects */
+  --card-hover: #222231;
+  /* Elevated Charcoal (Hover/Active surfaces) - Hover state for cards */
+
+  /* TEXT COLORS */
+  --foreground: #F2F2F3;
+  /* Primary Text (High) - Main headings, key labels */
+  --foreground-secondary: #B9BBC6;
+  /* Body Text (Medium) - Paragraphs, descriptions, reminder text */
+  --muted-foreground: #8A8EA0;
+  /* Muted Text - Helper text, captions, placeholders */
+  --muted-foreground-light: #B9BBC6;
+  /* Body Text (Medium) - Same as foreground-secondary */
+  --muted-foreground-medium: #8A8EA0;
+  /* Muted Text - Same as muted-foreground */
+  --disabled-foreground: #5F6375;
+  /* Disabled Text - Disabled buttons, inactive states */
+
+  /* MUTED COLORS */
+  --muted: #4e4e4e;
+  /* Muted gray */
+
+  /* POPOVER */
+  --popover: #191922;
+  --popover-foreground: #F2F2F3;
+
+  /* STATUS COLORS */
+  --destructive: #ff6b6b;
+  /* Error red */
+  --destructive-foreground: #F2F2F3;
+  --success: #90f2a6;
+  /* Success green */
+  --success-foreground: #121217;
+  --warning: #C59B48;
+  /* Warning gold (same as primary) */
+  --warning-foreground: #121217;
+  --info: #4de3ed;
+  /* Info cyan */
+  --info-foreground: #121217;
+
+  /* BORDER COLORS */
+  --border: #2A2A3A;
+  /* Hairline Border - Card borders, table lines, subtle separators */
+  --border-gold: rgba(197, 155, 72, 0.22);
+  /* Glow Border (Gold-tinted subtle) - Only for "special" components (primary CTA, highlighted tier, selected card) */
+  --border-gold-light: rgba(197, 155, 72, 0.15);
+  /* Lighter version of glow border for subtle effects */
+  --border-secondary: #2A2A3A;
+  /* Hairline Border - Same as --border for consistency */
+  --border-light: #2A2A3A;
+  /* Hairline Border - Same as --border */
+  --border-orange: #C59B48;
+
+  /* INPUT COLORS */
+  --input: transparent;
+  --input-background: #191922;
+  /* Soft Charcoal (Cards) - Input background should match card background */
+  --ring: #C59B48;
+  /* Focus ring gold */
+
+  /* CHART COLORS */
+  --chart-1: #C59B48;
+  /* Gold */
+  --chart-2: #45e3d3;
+  /* Teal */
+  --chart-3: #4de3ed;
+  /* Cyan */
+  --chart-4: #D6AE5A;
+  /* Light gold */
+  --chart-5: #90f2a6;
+  /* Success green */
+
+  /* SIDEBAR COLORS */
+  --sidebar: #121217;
+  /* Charcoal (Section panels) - Sidebar background */
+  --sidebar-foreground: #F2F2F3;
+  /* Primary Text (High) - Sidebar text */
+  --sidebar-primary: #C59B48;
+  /* Primary Gold (Warm) - Sidebar primary accent */
+  --sidebar-primary-foreground: #0B0B0D;
+  /* True Black (Base) - Text on gold background */
+  --sidebar-accent: #191922;
+  /* Soft Charcoal (Cards) - Sidebar accent background */
+  --sidebar-accent-foreground: #F2F2F3;
+  /* Primary Text (High) - Sidebar accent text */
+  --sidebar-border: #2A2A3A;
+  /* Hairline Border - Sidebar border */
+  --sidebar-ring: #C59B48;
+  /* Primary Gold (Warm) - Sidebar focus ring */
+
+  /* GRADIENTS */
+  --gradient-primary: linear-gradient(174deg, rgba(197, 155, 72, 1) 0%, rgba(214, 174, 90, 1) 100%);
+  /* Primary Gold to Gold Hover */
+  --gradient-secondary: linear-gradient(171deg, rgba(197, 155, 72, 1) 0%, rgba(214, 174, 90, 1) 100%);
+  /* Primary Gold to Gold Hover */
+  --gradient-card: linear-gradient(90deg, rgba(197, 155, 72, 0.1) 0%, rgba(69, 227, 211, 0.1) 100%);
+  /* Keep teal accent if needed, otherwise use gold only */
+  --gradient-gold: linear-gradient(to right, #C59B48, #D6AE5A);
+  /* Primary Gold to Gold Hover */
+  --gradient-amber: linear-gradient(to right, #C59B48, #D6AE5A);
+  /* Primary Gold to Gold Hover */
+
+  /* SHADOWS */
+  --shadow-primary: inset 0px -1px 0px 1px rgba(169, 130, 55, 0.6),
+    inset 0px 1px 0px 1px rgba(197, 155, 72, 0.4),
+    0px 4px 12px rgba(197, 155, 72, 0.35),
+    0px 10px 30px -10px rgba(197, 155, 72, 0.4);
+  --shadow-secondary: 0px 30.51px 30.51px rgba(0, 0, 0, 0.4),
+    inset 0px 0px 5.08px #fface3,
+    inset 0px -1.02px 8.14px #9375b5;
+  --shadow-card: 0px 0px 136.8px 15px rgba(11, 11, 13, 0.8);
+  --shadow-hover: 0 0 20px 4px rgba(197, 155, 72, 0.7);
+  --shadow-button: 0 8px 25px rgba(197, 155, 72, 0.3);
+
+  --radius: 0.625rem;
+  --switch-background: #8A8EA0;
+  --font-weight-medium: 500;
+  --font-weight-normal: 400;
+}
+
+.dark {
+  /* Same as :root for FANN scheme */
+  --font-size: 16px;
+
+  /* PRIMARY COLORS - FANN Gold System */
+  --primary: #C59B48;
+  --primary-light: #D6AE5A;
+  --primary-dark: #A98237;
+  --primary-foreground: #0B0B0D;
+
+  /* SECONDARY COLORS - FANN Teal System */
+  --secondary: #45e3d3;
+  --secondary-light: #5ee7d8;
+  --secondary-dark: #3bc4b5;
+  --secondary-foreground: #121217;
+
+  /* ACCENT COLORS */
+  --accent: #ffc936;
+  --accent-pink: #fface3;
+  --accent-purple: #9375b5;
+  --accent-foreground: #121217;
+
+  /* BACKGROUND COLORS - FANN Dark Purple System */
+  /* BACKGROUND COLORS - New Charcoal System */
+  --background: #0B0B0D;
+  --background-dark: #121217;
+  --background-secondary: #191922;
+  --background-darker: #222231;
+
+  /* CARD COLORS */
+  /* CARD COLORS */
+  --card: #191922;
+  --card-foreground: #F2F2F3;
+  --card-transparent: rgba(255, 255, 255, 0.06);
+  --card-hover: #222231;
+
+  /* TEXT COLORS */
+  --foreground: #F2F2F3;
+  --foreground-secondary: #B9BBC6;
+  --muted-foreground: #8A8EA0;
+  --muted-foreground-light: #B9BBC6;
+  --muted-foreground-medium: #8A8EA0;
+  --disabled-foreground: #5F6375;
+
+  /* MUTED COLORS */
+  --muted: #4e4e4e;
+
+  /* POPOVER */
+  --popover: #191922;
+  --popover-foreground: #F2F2F3;
+
+  /* STATUS COLORS */
+  --destructive: #ff6b6b;
+  --destructive-foreground: #F2F2F3;
+  --success: #90f2a6;
+  --success-foreground: #121217;
+  --warning: #C59B48;
+  --warning-foreground: #121217;
+  --info: #4de3ed;
+  --info-foreground: #121217;
+
+  /* BORDER COLORS */
+  --border: #2A2A3A;
+  --border-gold: rgba(197, 155, 72, 0.22);
+  --border-gold-light: rgba(197, 155, 72, 0.15);
+  --border-secondary: #2A2A3A;
+  --border-light: #2A2A3A;
+  --border-orange: #C59B48;
+
+  /* INPUT COLORS */
+  --input: transparent;
+  --input-background: #191922;
+  --ring: #C59B48;
+
+  /* CHART COLORS */
+  --chart-1: #C59B48;
+  --chart-2: #45e3d3;
+  --chart-3: #4de3ed;
+  --chart-4: #D6AE5A;
+  --chart-5: #90f2a6;
+
+  /* SIDEBAR COLORS */
+  --sidebar: #121217;
+  --sidebar-foreground: #F2F2F3;
+  --sidebar-primary: #C59B48;
+  --sidebar-primary-foreground: #0B0B0D;
+  --sidebar-accent: #191922;
+  --sidebar-accent-foreground: #F2F2F3;
+  --sidebar-border: #2A2A3A;
+  --sidebar-ring: #C59B48;
+
+  /* GRADIENTS */
+  --gradient-primary: linear-gradient(174deg, rgba(197, 155, 72, 1) 0%, rgba(214, 174, 90, 1) 100%);
+  --gradient-secondary: linear-gradient(171deg, rgba(197, 155, 72, 1) 0%, rgba(214, 174, 90, 1) 100%);
+  --gradient-card: linear-gradient(90deg, rgba(197, 155, 72, 0.1) 0%, rgba(69, 227, 211, 0.1) 100%);
+  --gradient-gold: linear-gradient(to right, #C59B48, #D6AE5A);
+  --gradient-amber: linear-gradient(to right, #C59B48, #D6AE5A);
+
+  /* SHADOWS */
+  --shadow-primary: inset 0px -1px 0px 1px rgba(169, 130, 55, 0.6),
+    inset 0px 1px 0px 1px rgba(197, 155, 72, 0.4),
+    0px 4px 12px rgba(197, 155, 72, 0.35),
+    0px 10px 30px -10px rgba(197, 155, 72, 0.4);
+  --shadow-secondary: 0px 30.51px 30.51px rgba(0, 0, 0, 0.4),
+    inset 0px 0px 5.08px #fface3,
+    inset 0px -1.02px 8.14px #9375b5;
+  --shadow-card: 0px 0px 136.8px 15px rgba(11, 11, 13, 0.8);
+  --shadow-hover: 0 0 20px 4px rgba(197, 155, 72, 0.7);
+  --shadow-button: 0 8px 25px rgba(197, 155, 72, 0.3);
+
+  --radius: 0.625rem;
+  --switch-background: #8A8EA0;
+  --font-weight-medium: 500;
+  --font-weight-normal: 400;
+}
+
+@theme inline {
+  /* Font Families for Tailwind Utilities */
+  --font-family-heading: var(--font-heading);
+  --font-family-body: var(--font-body);
+  --font-family-arabic-heading: var(--font-arabic-heading);
+  --font-family-arabic-body: var(--font-arabic-body);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-input-background: var(--input-background);
+  --color-switch-background: var(--switch-background);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* FANN Gold Color Mappings (amber/orange/yellow → gold) */
+  --color-amber-400: #C59B48;
+  --color-amber-500: #C59B48;
+  --color-amber-600: #A98237;
+  --color-orange-400: #D6AE5A;
+  --color-orange-500: #D6AE5A;
+  --color-orange-600: #C59B48;
+  --color-yellow-400: #C59B48;
+  --color-yellow-500: #C59B48;
+  --color-yellow-600: #D6AE5A;
+
+  /* FANN Teal Color Mappings (blue/cyan/sky → teal) */
+  --color-blue-400: #45e3d3;
+  --color-blue-500: #45e3d3;
+  --color-cyan-400: #45e3d3;
+  --color-cyan-500: #45e3d3;
+  --color-sky-400: #4de3ed;
+  --color-sky-500: #4de3ed;
+
+  /* FANN Purple Color Mappings */
+  --color-purple-400: #9375b5;
+  --color-purple-500: #9375b5;
+  --color-purple-600: #7a5f9a;
+
+  /* FANN Success Green Mappings */
+  --color-green-400: #90f2a6;
+  --color-green-500: #90f2a6;
+  --color-green-600: #7ae09a;
+  --color-disabled: var(--disabled-foreground); 
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-body);
+    font-feature-settings: 'kern' 1, 'liga' 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Typography - Headings (only if no font utility class is applied) */
+  h1:not(.font-heading):not(.font-body):not(.font-arabic-heading):not(.font-arabic-body),
+  h2:not(.font-heading):not(.font-body):not(.font-arabic-heading):not(.font-arabic-body) {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    /* Bold for h1, h2 */
+    letter-spacing: -0.025em;
+  }
+
+  h3:not(.font-heading):not(.font-body):not(.font-arabic-heading):not(.font-arabic-body),
+  h4:not(.font-heading):not(.font-body):not(.font-arabic-heading):not(.font-arabic-body),
+  h5:not(.font-heading):not(.font-body):not(.font-arabic-heading):not(.font-arabic-body),
+  h6:not(.font-heading):not(.font-body):not(.font-arabic-heading):not(.font-arabic-body) {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    /* Semibold for h3-h6 */
+    letter-spacing: -0.025em;
+  }
+
+  /* Typography - Body Text (only if no font utility class is applied) */
+  p:not(.font-heading):not(.font-body):not(.font-arabic-heading):not(.font-arabic-body),
+  span:not(.font-heading):not(.font-body):not(.font-arabic-heading):not(.font-arabic-body),
+  div:not(.font-heading):not(.font-body):not(.font-arabic-heading):not(.font-arabic-body),
+  a:not(.font-heading):not(.font-body):not(.font-arabic-heading):not(.font-arabic-body),
+  li:not(.font-heading):not(.font-body):not(.font-arabic-heading):not(.font-arabic-body),
+  td:not(.font-heading):not(.font-body):not(.font-arabic-heading):not(.font-arabic-body),
+  th:not(.font-heading):not(.font-body):not(.font-arabic-heading):not(.font-arabic-body) {
+    font-family: var(--font-body);
+    font-weight: 400;
+  }
+
+  /* Arabic Typography Adjustments (only if no font utility class is applied) */
+  [dir="rtl"]:not(.font-heading):not(.font-body):not(.font-arabic-heading):not(.font-arabic-body) {
+    font-family: var(--font-arabic-body);
+  }
+
+  [dir="rtl"] h1:not(.font-heading):not(.font-body):not(.font-arabic-heading):not(.font-arabic-body),
+  [dir="rtl"] h2:not(.font-heading):not(.font-body):not(.font-arabic-heading):not(.font-arabic-body),
+  [dir="rtl"] h3:not(.font-heading):not(.font-body):not(.font-arabic-heading):not(.font-arabic-body),
+  [dir="rtl"] h4:not(.font-heading):not(.font-body):not(.font-arabic-heading):not(.font-arabic-body),
+  [dir="rtl"] h5:not(.font-heading):not(.font-body):not(.font-arabic-heading):not(.font-arabic-body),
+  [dir="rtl"] h6:not(.font-heading):not(.font-body):not(.font-arabic-heading):not(.font-arabic-body) {
+    font-family: var(--font-arabic-heading);
+    letter-spacing: 0;
+  }
+}
+
+/**
+ * Base typography. This is not applied to elements which have an ancestor with a Tailwind text class.
+ */
+@layer base {
+  :where(:not(:has([class*=" text-"]), :not(:has([class^="text-"])))) {
+    h1 {
+      font-size: var(--text-2xl);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    h2 {
+      font-size: var(--text-xl);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    h3 {
+      font-size: var(--text-lg);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    h4 {
+      font-size: var(--text-base);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    p {
+      font-size: var(--text-base);
+      font-weight: var(--font-weight-normal);
+      line-height: 1.5;
+    }
+
+    label {
+      font-size: var(--text-base);
+      font-weight: 500;
+      line-height: 1.5;
+    }
+
+    button {
+      font-size: var(--text-base);
+      font-weight: 500;
+      line-height: 1.5;
+    }
+
+    input {
+      font-size: var(--text-base);
+      font-weight: var(--font-weight-normal);
+      line-height: 1.5;
+    }
+  }
+}
+
+html {
+  font-size: var(--font-size);
+  scroll-behavior: smooth;
+  overflow-x: hidden;
+}
+
+body {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
+/* Gamified Animations */
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-20px);
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(197, 155, 72, 0.4);
+  }
+
+  50% {
+    box-shadow: 0 0 40px rgba(197, 155, 72, 0.8);
+  }
+}
+
+@keyframes gradient-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes sky-shimmer {
+
+  0%,
+  100% {
+    opacity: 0.5;
+    transform: translateY(0) scale(1);
+  }
+
+  50% {
+    opacity: 1;
+    transform: translateY(-10px) scale(1.05);
+  }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradient-shift 8s ease infinite;
+}
+
+.animate-sky-shimmer {
+  animation: sky-shimmer 4s ease-in-out infinite;
+}
+
+/* Glass morphism - Enhanced for better visibility against vibrant backgrounds */
+.glass {
+  background: #191922;
+  /* backdrop-filter: blur(16px) saturate(180%); */
+  /* border: 1px solid rgba(255, 204, 51, 0.25); */
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+}
+
+/* Glow effects for gamification */
+.glow-gold {
+  box-shadow: 0 0 20px rgba(197, 155, 72, 0.5);
+}
+
+.glow-teal {
+  box-shadow: 0 0 20px rgba(69, 227, 211, 0.5);
+}
+
+.glow-sky {
+  box-shadow: 0 0 20px rgba(77, 227, 237, 0.5);
+}
+
+.glow-cream {
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+}
+
+/* Sky gradient for gamified accents */
+.sky-gradient {
+  background: linear-gradient(135deg, #4de3ed 0%, #45e3d3 50%, #C59B48 100%);
+}
+
+.midnight-gradient {
+  background: linear-gradient(135deg, #0B0B0D 0%, #191922 50%, #4e4e4e 100%);
+}
+
+/* Glowing buttons for gamification */
+.btn-glow {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-glow::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(197, 155, 72, 0.5);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.btn-glow:hover::before {
+  width: 300px;
+  height: 300px;
+}
+
+/* Custom Scrollbar Styles - Matching Homepage Theme */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 0px;
+  /* Hide horizontal scrollbar */
+}
+
+.custom-scrollbar::-webkit-scrollbar:horizontal {
+  display: none;
+  /* Hide horizontal scrollbar */
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(11, 11, 13, 0.5);
+  /* True Black (Base) with opacity */
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(197, 155, 72, 0.4);
+  /* Primary Gold (Warm) with opacity */
+  border-radius: 4px;
+  border: 1px solid rgba(197, 155, 72, 0.2);
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(197, 155, 72, 0.6);
+}
+
+/* Firefox scrollbar */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(197, 155, 72, 0.4) rgba(11, 11, 13, 0.5);
+  overflow-x: hidden;
+}
+
+/* Hide default browser calendar icon for date inputs */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  display: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* Firefox - hide calendar icon */
+input[type="date"] {
+  -moz-appearance: textfield;
+}
+
+/* ============================================================================
+ * Typography Utility Classes
+ * ============================================================================
+ * 
+ * These classes apply the correct font families based on language.
+ * Tailwind v4 requires explicit utility class definitions.
+ */
+
+@layer utilities {
+
+  /* English Font Classes - !important to ensure they override base layer */
+  .font-heading {
+    font-family: var(--font-heading) !important;
+  }
+
+  .font-body {
+    font-family: var(--font-body) !important;
+  }
+
+  /* Arabic Font Classes */
+  .font-arabic-heading {
+    font-family: var(--font-arabic-heading) !important;
+  }
+
+  .font-arabic-body {
+    font-family: var(--font-arabic-body) !important;
+  }
+
+  /* RTL Support - Automatically switch fonts when dir="rtl" */
+  [dir="rtl"] .font-heading {
+    font-family: var(--font-arabic-heading) !important;
+  }
+
+  [dir="rtl"] .font-body {
+    font-family: var(--font-arabic-body) !important;
+  }
+}

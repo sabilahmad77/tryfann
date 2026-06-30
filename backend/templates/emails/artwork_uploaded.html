@@ -1,0 +1,13 @@
+{% extends 'emails/base.html' %}
+{% block content %}
+<h2>Artwork Uploaded Successfully!</h2>
+<p>Hi {{ artist_name }},</p>
+<p>Great news! Your artwork has been successfully uploaded and is now live on FANN.</p>
+<div class="info-box">
+    <strong>Artwork Title:</strong> {{ artwork_title }}<br>
+    <strong>Artwork ID:</strong> {{ artwork_id }}
+</div>
+<p>Your artwork is now visible to potential buyers. We'll notify you when someone shows interest or makes a purchase.</p>
+<a href="{{ platform_url }}/artworks/{{ artwork_id }}" class="button">View Your Artwork</a>
+<p>Best regards,<br>The FANN Team</p>
+{% endblock %}

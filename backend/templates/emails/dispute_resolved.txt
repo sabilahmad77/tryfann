@@ -1,0 +1,13 @@
+Dispute Resolved
+
+Hi {{ user_name }},
+
+Your dispute has been resolved by our team.
+
+Dispute ID: {{ dispute_id }}
+Resolution: {{ resolution }}
+
+If you have any questions about this resolution, please contact our support team.
+
+Best regards,
+The FANN Team
