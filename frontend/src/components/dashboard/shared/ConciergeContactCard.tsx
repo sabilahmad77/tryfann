@@ -4,7 +4,7 @@ import { motion } from "motion/react";
 
 // Concierge contact panel (gallery / investor). Static, premium — gives the
 // applicant a clear human point of contact. No points/missions/readiness.
-const CONCIERGE_EMAIL = "concierge@trifan.com";
+const CONCIERGE_EMAIL = "concierge@tryfann.com";
 
 const content = {
   en: {

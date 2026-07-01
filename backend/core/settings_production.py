@@ -1,5 +1,5 @@
 """
-Standalone PRODUCTION settings for Trifan (api.trifan.com).
+Standalone PRODUCTION settings for TryFANN (api.tryfann.com).
 
 Self-contained product — NOT merged with FANN, NOT pointing at any FANN prod
 backend. Inherits the trimmed app/URL surface from settings_local, then makes
@@ -34,7 +34,7 @@ DEBUG = _env_bool("DJANGO_DEBUG", False)
 # SECRET_KEY: env in prod; inherits the dev key only for unconfigured staging.
 SECRET_KEY = _env("DJANGO_SECRET_KEY", SECRET_KEY)  # noqa: F405
 ALLOWED_HOSTS = _env_list(
-    "DJANGO_ALLOWED_HOSTS", ["api.trifan.com", "localhost", "127.0.0.1"]
+    "DJANGO_ALLOWED_HOSTS", ["api.tryfann.com", "localhost", "127.0.0.1"]
 )
 
 # --- Database: Postgres via DATABASE_URL when provided (next phase); else the
@@ -65,19 +65,19 @@ if "whitenoise.middleware.WhiteNoiseMiddleware" not in _mw:
     _mw.insert(_i, "whitenoise.middleware.WhiteNoiseMiddleware")
 MIDDLEWARE = _mw
 
-# --- CORS / CSRF locked to the Trifan frontend (no allow-all in prod) ---
+# --- CORS / CSRF locked to the TryFANN frontend (no allow-all in prod) ---
 CORS_ALLOW_ALL_ORIGINS = False
 CORS_ALLOWED_ORIGINS = _env_list(
-    "CORS_ALLOWED_ORIGINS", ["https://trifan.com", "https://www.trifan.com"]
+    "CORS_ALLOWED_ORIGINS", ["https://tryfann.com", "https://www.tryfann.com"]
 )
 CORS_ALLOW_CREDENTIALS = True
 CSRF_TRUSTED_ORIGINS = _env_list(
     "CSRF_TRUSTED_ORIGINS",
-    ["https://trifan.com", "https://www.trifan.com", "https://api.trifan.com"],
+    ["https://tryfann.com", "https://www.tryfann.com", "https://api.tryfann.com"],
 )
 
 # Verification/email links point at the real frontend.
-FRONTEND_BASE_URL = _env("FRONTEND_BASE_URL", "https://trifan.com")
+FRONTEND_BASE_URL = _env("FRONTEND_BASE_URL", "https://www.tryfann.com")
 
 # --- Email: real SMTP only when creds are present (next phase); console else ---
 if _env("EMAIL_HOST_USER") and _env("EMAIL_HOST_PASSWORD"):
@@ -87,7 +87,7 @@ if _env("EMAIL_HOST_USER") and _env("EMAIL_HOST_PASSWORD"):
     EMAIL_HOST_USER = _env("EMAIL_HOST_USER")
     EMAIL_HOST_PASSWORD = _env("EMAIL_HOST_PASSWORD")
     EMAIL_USE_TLS = _env_bool("EMAIL_USE_TLS", True)
-    DEFAULT_FROM_EMAIL = _env("DEFAULT_FROM_EMAIL", "Trifan <no-reply@trifan.com>")
+    DEFAULT_FROM_EMAIL = _env("DEFAULT_FROM_EMAIL", "TryFANN <no-reply@tryfann.com>")
 else:
     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 

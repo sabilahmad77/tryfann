@@ -14,11 +14,11 @@ import { extractErrorMessage } from "@/utils/errorMessages";
 // Vite requires the VITE_ prefix to expose env vars to the client.
 // Local dev points this at the local Django backend via tryfann/.env.local
 // (VITE_API_BASE_URL=/api, proxied to http://localhost:8000 by vite.config).
-// Production (Vercel) MUST set VITE_API_BASE_URL=https://api.trifan.com/api at
-// build time. The fallback is the standalone Trifan API — never the old FANN.
+// Production (Vercel) MUST set VITE_API_BASE_URL=https://api.tryfann.com/api at
+// build time. The fallback is the standalone TryFANN API — never the old FANN.
 export const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "https://api.trifan.com/api";
-export const FE_BASE_URL = "https://trifan.com";
+  import.meta.env.VITE_API_BASE_URL || "https://api.tryfann.com/api";
+export const FE_BASE_URL = "https://www.tryfann.com";
 const BASE_URL = API_BASE_URL;
 
 

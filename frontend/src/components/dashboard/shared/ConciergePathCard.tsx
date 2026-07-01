@@ -6,7 +6,7 @@ import { motion } from "motion/react";
 // Surfaces a concierge / representation path for TOP-TIER game applicants
 // (artist + curator who have reached Priority Access or Founder's Circle).
 // Additive invitation only — no points/missions; it links to a human advisor.
-const CONCIERGE_EMAIL = "concierge@trifan.com";
+const CONCIERGE_EMAIL = "concierge@tryfann.com";
 const ELIGIBLE_ROLES = ["artist", "curator"];
 const TOP_TIERS = ["priority_access", "founders_circle"];
 

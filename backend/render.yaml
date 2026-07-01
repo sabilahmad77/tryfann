@@ -1,8 +1,8 @@
-# Render Blueprint for the standalone Trifan API (api.trifan.com).
+# Render Blueprint for the standalone TryFANN API (api.tryfann.com).
 # Free plan works for staging; $7/mo Starter keeps it always-on for production.
 services:
   - type: web
-    name: trifan-api
+    name: tryfann-api
     runtime: python
     plan: free            # bump to "starter" ($7/mo) for always-on production
     branch: main
@@ -20,11 +20,11 @@ services:
       - key: DJANGO_SECRET_KEY
         generateValue: true
       - key: DJANGO_ALLOWED_HOSTS
-        value: "api.trifan.com"
+        value: "api.tryfann.com"
       - key: CORS_ALLOWED_ORIGINS
-        value: "https://trifan.com,https://www.trifan.com"
+        value: "https://tryfann.com,https://www.tryfann.com"
       - key: CSRF_TRUSTED_ORIGINS
-        value: "https://trifan.com,https://www.trifan.com,https://api.trifan.com"
+        value: "https://tryfann.com,https://www.tryfann.com,https://api.tryfann.com"
       - key: FRONTEND_BASE_URL
-        value: "https://trifan.com"
+        value: "https://www.tryfann.com"
       # DATABASE_URL / EMAIL_* / Redis are added in the approved next phase.

@@ -1,4 +1,4 @@
-# Standalone Trifan API — production dependency set.
+# Standalone TryFANN API — production dependency set.
 # = the trimmed funnel runtime (requirements-local-tryfann.txt) PLUS the
 # pieces a real host needs: WSGI server, static serving, Postgres driver,
 # DATABASE_URL parsing. Deliberately excludes torch/tf/web3/faiss/opencv.

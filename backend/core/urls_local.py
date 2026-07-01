@@ -15,7 +15,7 @@ from django.urls import include, path
 
 def health(_request):
     """Liveness probe for the backend host (Render/Railway/Fly health checks)."""
-    return JsonResponse({"status": "ok", "service": "trifan-api"})
+    return JsonResponse({"status": "ok", "service": "tryfann-api"})
 
 
 urlpatterns = (
