@@ -43,8 +43,15 @@ _db_url = _env("DATABASE_URL")
 if _db_url:
     import dj_database_url
 
+    # Require TLS only for external hostnames (which have a domain, e.g.
+    # dpg-xxx.frankfurt-postgres.render.com). Render's INTERNAL hostname is a
+    # bare label (dpg-xxx) reached over the private network and rejects
+    # sslmode=require. Override with DB_SSL_REQUIRE if ever needed.
+    _db_host = _db_url.split("@")[-1].split("/")[0].split(":")[0] if "@" in _db_url else ""
+    _db_ssl = _env_bool("DB_SSL_REQUIRE", "." in _db_host)
+
     DATABASES = {  # noqa: F405
-        "default": dj_database_url.parse(_db_url, conn_max_age=600, ssl_require=True)
+        "default": dj_database_url.parse(_db_url, conn_max_age=600, ssl_require=_db_ssl)
     }
 
 # --- Static files via WhiteNoise (no separate static host needed) ---
