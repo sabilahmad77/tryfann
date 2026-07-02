@@ -79,15 +79,24 @@ CSRF_TRUSTED_ORIGINS = _env_list(
 # Verification/email links point at the real frontend.
 FRONTEND_BASE_URL = _env("FRONTEND_BASE_URL", "https://www.tryfann.com")
 
-# --- Email: real SMTP only when creds are present (next phase); console else ---
-if _env("EMAIL_HOST_USER") and _env("EMAIL_HOST_PASSWORD"):
+# --- Email ---
+# Never let a slow mail server block the request thread (Render free tier blocks
+# outbound SMTP ports, which made SMTP sends hang the register endpoint).
+EMAIL_TIMEOUT = int(_env("EMAIL_TIMEOUT", "10"))
+DEFAULT_FROM_EMAIL = _env("DEFAULT_FROM_EMAIL", "TryFANN <no-reply@tryfann.com>")
+
+if _env("RESEND_API_KEY"):
+    # Resend over its HTTPS API (port 443) — works where SMTP ports are blocked.
+    EMAIL_BACKEND = "anymail.backends.resend.EmailBackend"
+    ANYMAIL = {"RESEND_API_KEY": _env("RESEND_API_KEY")}
+elif _env("EMAIL_HOST_USER") and _env("EMAIL_HOST_PASSWORD"):
+    # Generic SMTP (only where the host permits outbound SMTP).
     EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
     EMAIL_HOST = _env("EMAIL_HOST", "sandbox.smtp.mailtrap.io")
     EMAIL_PORT = int(_env("EMAIL_PORT", "2525"))
     EMAIL_HOST_USER = _env("EMAIL_HOST_USER")
     EMAIL_HOST_PASSWORD = _env("EMAIL_HOST_PASSWORD")
     EMAIL_USE_TLS = _env_bool("EMAIL_USE_TLS", True)
-    DEFAULT_FROM_EMAIL = _env("DEFAULT_FROM_EMAIL", "TryFANN <no-reply@tryfann.com>")
 else:
     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
