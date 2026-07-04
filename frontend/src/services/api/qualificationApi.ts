@@ -53,15 +53,30 @@ export interface AnalyticsEventBody {
   session_id?: string;
 }
 
+// A quiz question as served to the client — the correct answer index is
+// stripped server-side and never reaches the browser (QUIZ-1).
+export interface QuizQuestion {
+  id: number;
+  q_en: string;
+  q_ar: string;
+  options_en: string[];
+  options_ar: string[];
+}
+
 export interface QualificationTask {
   key: string;
   title_en: string;
   title_ar: string;
   description_en: string;
   description_ar: string;
-  points: number;
+  /** SCORE-1: the exact readiness completing this task adds right now
+   *  (0 once the capped task component is full). */
+  readiness_delta: number;
   verification: "instant" | "manual";
   status: "available" | "pending" | "approved" | "rejected";
+  has_quiz: boolean;
+  questions: QuizQuestion[];
+  attempts: number;
 }
 
 export interface MyTasksResponse {
@@ -75,7 +90,7 @@ export interface CompleteTaskResponse {
   success: boolean;
   status_code: number;
   message: Record<string, unknown> | string;
-  data: { task: string; status: string; me: QualificationMe };
+  data: { task: string; status: string; earned: number; me: QualificationMe };
 }
 
 export const qualificationApi = baseApi.injectEndpoints({

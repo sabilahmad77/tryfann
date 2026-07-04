@@ -202,6 +202,11 @@ class Task(TimestampMixin):
     # Roles this task applies to (e.g. ["Artist", "Curator"]); empty = all
     # GAME-track roles.
     roles = models.JSONField(default=list, blank=True)
+    # QUIZ-1 (audit BRK-03/SEC-01): the knowledge gate. A list of
+    # {q_en, q_ar, options_en[], options_ar[], answer} objects. The correct
+    # index NEVER leaves the server; completion requires submitted answers
+    # to pass. Empty list = no quiz (e.g. manual-review submissions).
+    questions = models.JSONField(default=list, blank=True)
     is_active = models.BooleanField(default=True)
     sort_order = models.PositiveSmallIntegerField(default=0)
     # §3 content scheduling: a trust module is only visible to users once
@@ -257,16 +262,22 @@ class UserTask(TimestampMixin):
     PENDING = "pending"
     APPROVED = "approved"
     REJECTED = "rejected"
+    FAILED = "failed"  # quiz attempted but not passed — retryable
     STATUS_CHOICES = [
         (PENDING, "Pending review"),
         (APPROVED, "Approved"),
         (REJECTED, "Rejected"),
+        (FAILED, "Quiz failed (retryable)"),
     ]
 
     user = models.ForeignKey(USER, on_delete=models.CASCADE, related_name="user_tasks")
     task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name="completions")
     status = models.CharField(max_length=16, choices=STATUS_CHOICES, default=PENDING)
     payload = models.JSONField(default=dict, blank=True)  # e.g. submission URL
+    # QUIZ-2 anti-replay/anti-bruteforce bookkeeping: every quiz submission is
+    # an attempt; 3 consecutive failures trigger a cooldown before retrying.
+    attempts = models.PositiveSmallIntegerField(default=0)
+    last_attempt_at = models.DateTimeField(null=True, blank=True)
     reviewed_by = models.ForeignKey(
         USER, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
     )

@@ -155,10 +155,15 @@ class CompleteTaskView(BaseAPIView):
         user_task, error = services.complete_task(request.user, key, payload=payload)
         if error:
             return self.send_bad_request_response(message=error)
+        # SCORE-1: return the exact readiness the completion earned so the UI
+        # shows the same number the ledger recorded and the score moved by.
+        user_task.refresh_from_db()
+        earned = user_task.ledger_entry.delta if user_task.ledger_entry else 0
         return self.send_success_response(
             data={
                 "task": key,
                 "status": user_task.status,
+                "earned": earned,
                 "me": me_payload(request.user),
             }
         )

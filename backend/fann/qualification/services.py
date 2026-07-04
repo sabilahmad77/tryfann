@@ -176,10 +176,49 @@ def credit_referral(referee):
 
 # --- Tasks (Phase 5) --------------------------------------------------------
 
+# QUIZ-2 anti-bruteforce: after this many consecutive quiz failures the user
+# must wait QUIZ_COOLDOWN_MINUTES before submitting again.
+QUIZ_MAX_ATTEMPTS_BEFORE_COOLDOWN = 3
+QUIZ_COOLDOWN_MINUTES = 15
+
+
+def readiness_delta_for_task(user):
+    """The EXACT readiness a further approved task adds for this user now.
+
+    SCORE-1 single-source rule: the number a mission advertises, the ledger
+    line it writes, and the visible score movement must all be this value.
+    Task completion is a capped component (anti-farming, plan SCORE-2), so
+    once the cap is reached further tasks honestly advertise +0.
+    """
+    from fann.qualification.models import UserTask
+
+    approved = UserTask.objects.filter(user=user, status=UserTask.APPROVED).count()
+    cap = scoring.COMPONENT_WEIGHTS["task_completion"]
+    per = scoring.TASK_PER
+    current = min(cap, approved * per)
+    return min(cap, (approved + 1) * per) - current
+
+
+def _public_questions(task):
+    """Quiz questions with the correct answers stripped (server-only)."""
+    return [
+        {
+            "id": i,
+            "q_en": q.get("q_en", ""),
+            "q_ar": q.get("q_ar", ""),
+            "options_en": q.get("options_en", []),
+            "options_ar": q.get("options_ar", []),
+        }
+        for i, q in enumerate(task.questions or [])
+    ]
+
+
 def tasks_for_user(user):
     """Active GAME-track tasks for this user's role, with completion state.
 
     Concierge users get an empty list — they never see missions (mandate §2).
+    Quiz questions ship WITHOUT their answers; `readiness_delta` is the
+    server-computed score movement completing the task would produce now.
     """
     from fann.qualification.models import Task, UserTask
 
@@ -199,9 +238,15 @@ def tasks_for_user(user):
     states = {
         ut.task_id: ut for ut in UserTask.objects.filter(user=user, task__in=tasks)
     }
+    delta_next = readiness_delta_for_task(user)
     out = []
     for t in tasks:
         ut = states.get(t.id)
+        status = ut.status if ut else "available"
+        # A failed quiz renders as available again (retryable).
+        if status == UserTask.FAILED:
+            status = "available"
+        done = ut is not None and ut.status in (UserTask.APPROVED, UserTask.PENDING)
         out.append(
             {
                 "key": t.key,
@@ -209,19 +254,46 @@ def tasks_for_user(user):
                 "title_ar": t.title_ar,
                 "description_en": t.description_en,
                 "description_ar": t.description_ar,
-                "points": t.points,
+                # SCORE-1: advertise the ACTUAL readiness movement (0 once the
+                # capped component is full) — never a legacy point figure.
+                "readiness_delta": 0 if done else delta_next,
                 "verification": t.verification,
-                "status": ut.status if ut else "available",
+                "status": status,
+                "has_quiz": bool(t.questions),
+                "questions": _public_questions(t),
+                "attempts": ut.attempts if ut else 0,
             }
         )
     return out
 
 
+def _grade_quiz(task, payload):
+    """Grade submitted answers. Returns (passed, correct, total, error)."""
+    questions = task.questions or []
+    answers = (payload or {}).get("answers")
+    if not isinstance(answers, list) or len(answers) != len(questions):
+        return False, 0, len(questions), "Submit an answer for every question."
+    correct = 0
+    for q, a in zip(questions, answers):
+        try:
+            if int(a) == int(q.get("answer", -1)):
+                correct += 1
+        except (TypeError, ValueError):
+            pass
+    # Knowledge gate (QUIZ-1): every question must be answered correctly —
+    # the whitelist is quality-gated, not participation-gated.
+    return correct == len(questions), correct, len(questions), None
+
+
 def complete_task(user, key, payload=None):
     """Record a task completion. Idempotent per (user, task).
 
-    Instant tasks award points immediately; manual tasks go PENDING until an
-    operator approves (approve_user_task). Returns (user_task, error_message).
+    QUIZ-1: tasks with a question bank require correct answers — no quiz, no
+    readiness. QUIZ-2: one award per (user, task), attempts are logged, and
+    repeated failures trigger a cooldown. SCORE-1: the ledger entry written is
+    the exact readiness delta the completion produced.
+
+    Returns (user_task, error_message).
     """
     from fann.qualification.models import Task, UserTask
 
@@ -236,29 +308,92 @@ def complete_task(user, key, payload=None):
     if (task.roles and role not in task.roles) or task.points <= 0:
         return None, "This task is not available for your role."
 
+    now = timezone.now()
+    ut = UserTask.objects.filter(user=user, task=task).first()
+    # Anti-replay (QUIZ-2/SEC-01): a completed/pending task never re-awards.
+    if ut and ut.status in (UserTask.APPROVED, UserTask.PENDING):
+        return ut, None  # idempotent no-op — verified by test_task_replay
+
+    # Knowledge gate (QUIZ-1) for tasks that carry a question bank.
+    if task.questions:
+        # Cooldown after repeated failures (anti-bruteforce).
+        if (
+            ut
+            and ut.attempts >= QUIZ_MAX_ATTEMPTS_BEFORE_COOLDOWN
+            and ut.last_attempt_at
+            and (now - ut.last_attempt_at).total_seconds()
+            < QUIZ_COOLDOWN_MINUTES * 60
+        ):
+            return None, (
+                f"Too many attempts — try again in {QUIZ_COOLDOWN_MINUTES} minutes."
+            )
+        passed, correct, total, err = _grade_quiz(task, payload)
+        if err:
+            return None, err
+        attempt_log = {
+            "at": now.isoformat(),
+            "correct": correct,
+            "total": total,
+            "passed": passed,
+        }
+        if not passed:
+            if ut is None:
+                ut = UserTask(user=user, task=task, payload={})
+            ut.status = UserTask.FAILED
+            ut.attempts = (ut.attempts or 0) + 1
+            ut.last_attempt_at = now
+            history = ut.payload.get("attempt_history", [])
+            history.append(attempt_log)
+            ut.payload["attempt_history"] = history[-10:]
+            ut.save()
+            return None, (
+                f"{correct}/{total} correct — review the material and try again."
+            )
+        # Passed: fall through to award below, keeping the attempt trail.
+        payload = dict(payload or {})
+        payload["attempt_history"] = (
+            (ut.payload.get("attempt_history", []) if ut else []) + [attempt_log]
+        )[-10:]
+        payload.pop("answers", None)  # never persist raw answers
+
     initial_status = (
         UserTask.APPROVED if task.verification == Task.INSTANT else UserTask.PENDING
     )
-    ut, created = UserTask.objects.get_or_create(
-        user=user,
-        task=task,
-        defaults={"status": initial_status, "payload": payload or {}},
-    )
-    if not created:
-        return ut, None  # already recorded — idempotent no-op
+    if ut is None:
+        ut = UserTask(user=user, task=task)
+    ut.status = initial_status
+    ut.payload = payload or {}
+    ut.attempts = (ut.attempts or 0) + (1 if task.questions else 0)
+    ut.last_attempt_at = now
+    ut.save()
+
     if ut.status == UserTask.APPROVED:
+        # SCORE-1: write the ACTUAL readiness movement to the ledger — the
+        # same figure /me/tasks advertised — then recompute/persist.
+        delta = readiness_delta_for_task_completion(user)
         entry = award_points(
             user,
-            task.points,
+            delta,
             "task_completed",
             dedupe_key=f"task:{task.key}:{user.pk}",
             source="task",
-            metadata={"task": task.key},
+            metadata={"task": task.key, "readiness_delta": delta},
         )
         if entry:
             UserTask.objects.filter(pk=ut.pk).update(ledger_entry=entry)
         recompute(user)
     return ut, None
+
+
+def readiness_delta_for_task_completion(user):
+    """Delta for the task that was JUST approved (count includes it)."""
+    from fann.qualification.models import UserTask
+
+    approved = UserTask.objects.filter(user=user, status=UserTask.APPROVED).count()
+    cap = scoring.COMPONENT_WEIGHTS["task_completion"]
+    per = scoring.TASK_PER
+    before = min(cap, max(approved - 1, 0) * per)
+    return min(cap, approved * per) - before
 
 
 def _notify_tier_change(user, old_tier, new_tier):
@@ -300,13 +435,16 @@ def approve_user_task(user_task, reviewer=None):
         status=UserTask.APPROVED, reviewed_by=reviewer, reviewed_at=tz.now()
     )
     if user_task.task.points > 0:
+        # SCORE-1: the ledger line is the exact readiness movement this
+        # approval produced (capped component), same as instant tasks.
+        delta = readiness_delta_for_task_completion(user_task.user)
         entry = award_points(
             user_task.user,
-            user_task.task.points,
+            delta,
             "task_completed",
             dedupe_key=f"task:{user_task.task.key}:{user_task.user_id}",
             source="task",
-            metadata={"task": user_task.task.key},
+            metadata={"task": user_task.task.key, "readiness_delta": delta},
         )
         if entry:
             UserTask.objects.filter(pk=user_task.pk).update(ledger_entry=entry)

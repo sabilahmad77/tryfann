@@ -11,32 +11,47 @@ import { toast } from "sonner";
 
 // GAME-track missions list. The backend returns an empty list for concierge
 // roles (they never see missions), in which case this renders nothing.
+//
+// QUIZ-1 (audit BRK-03): missions with a question bank open a real quiz —
+// the server validates the answers and only a pass earns readiness. The
+// advertised "+N readiness" is the server-computed movement (SCORE-1), so
+// the chip, the ledger and the score always agree.
 const content = {
   en: {
     title: "Founding missions",
-    subtitle: "Server-verified steps that build your readiness",
-    pts: "pts",
+    subtitle: "Knowledge checks that build your readiness",
+    readiness: "readiness",
+    capped: "component full",
     complete: "Complete",
+    startQuiz: "Start quiz",
+    submitAnswers: "Submit answers",
+    cancel: "Cancel",
     submit: "Submit for review",
     pending: "Pending review",
     done: "Done",
     rejected: "Not approved",
     linkPlaceholder: "Link to your work (URL)",
-    completed: "Mission recorded",
-    failed: "Could not record — please try again",
+    completed: (n: number) =>
+      n > 0 ? `Passed — +${n} readiness` : "Recorded",
+    answerAll: "Answer every question first",
   },
   ar: {
     title: "مهام التأسيس",
-    subtitle: "خطوات يتحقق منها الخادم وتبني جاهزيتك",
-    pts: "نقطة",
+    subtitle: "اختبارات معرفية تبني جاهزيتك",
+    readiness: "جاهزية",
+    capped: "اكتمل هذا المكوّن",
     complete: "إكمال",
+    startQuiz: "ابدأ الاختبار",
+    submitAnswers: "إرسال الإجابات",
+    cancel: "إلغاء",
     submit: "إرسال للمراجعة",
     pending: "قيد المراجعة",
     done: "تم",
     rejected: "لم تتم الموافقة",
     linkPlaceholder: "رابط عملك (URL)",
-    completed: "تم تسجيل المهمة",
-    failed: "تعذّر التسجيل — يرجى المحاولة مرة أخرى",
+    completed: (n: number) =>
+      n > 0 ? `نجحت — ‎+${n} جاهزية` : "تم التسجيل",
+    answerAll: "أجب عن كل الأسئلة أولاً",
   },
 };
 
@@ -45,6 +60,8 @@ function MissionRow({ task }: { task: QualificationTask }) {
   const t = content[language];
   const [completeTask, { isLoading }] = useCompleteTaskMutation();
   const [link, setLink] = useState("");
+  const [quizOpen, setQuizOpen] = useState(false);
+  const [answers, setAnswers] = useState<Record<number, number>>({});
 
   const title = language === "ar" && task.title_ar ? task.title_ar : task.title_en;
   const desc =
@@ -52,15 +69,36 @@ function MissionRow({ task }: { task: QualificationTask }) {
       ? task.description_ar
       : task.description_en;
 
-  const handleComplete = async () => {
+  const submitCompletion = async (payload: Record<string, unknown>) => {
     try {
-      const payload =
-        task.verification === "manual" && link ? { submission_url: link } : {};
-      await completeTask({ key: task.key, payload }).unwrap();
-      toast.success(t.completed);
+      const res = await completeTask({ key: task.key, payload }).unwrap();
+      toast.success(t.completed(res.data.earned));
+      setQuizOpen(false);
+      setAnswers({});
     } catch {
-      toast.error(t.failed);
+      // Server failure reasons (wrong answers, cooldown) are surfaced by the
+      // shared API error toast — no duplicate generic toast here.
     }
+  };
+
+  const handleAction = () => {
+    if (task.has_quiz && !quizOpen) {
+      setQuizOpen(true);
+      return;
+    }
+    if (task.has_quiz) {
+      if (Object.keys(answers).length !== task.questions.length) {
+        toast.error(t.answerAll);
+        return;
+      }
+      void submitCompletion({
+        answers: task.questions.map((q) => answers[q.id]),
+      });
+      return;
+    }
+    void submitCompletion(
+      task.verification === "manual" && link ? { submission_url: link } : {}
+    );
   };
 
   const statusChip = (() => {
@@ -89,16 +127,59 @@ function MissionRow({ task }: { task: QualificationTask }) {
           {desc && <p className="mt-0.5 text-xs text-white/50">{desc}</p>}
         </div>
         <div className="flex items-center gap-3">
-          <span className="inline-flex items-center gap-1 text-xs text-gold tabular-nums">
-            <Sparkles className="h-3.5 w-3.5" /> +{task.points} {t.pts}
-          </span>
+          {task.status === "available" && (
+            <span className="inline-flex items-center gap-1 text-xs text-gold tabular-nums">
+              <Sparkles className="h-3.5 w-3.5" />
+              {task.readiness_delta > 0
+                ? `+${task.readiness_delta} ${t.readiness}`
+                : t.capped}
+            </span>
+          )}
           {statusChip}
         </div>
       </div>
 
+      {task.status === "available" && quizOpen && task.has_quiz && (
+        <div className="mt-4 space-y-4">
+          {task.questions.map((q, qi) => {
+            const question = language === "ar" && q.q_ar ? q.q_ar : q.q_en;
+            const options =
+              language === "ar" && q.options_ar.length
+                ? q.options_ar
+                : q.options_en;
+            return (
+              <fieldset key={q.id} className="rounded-lg border border-hairline p-3">
+                <legend className="px-1 text-sm text-white">
+                  {qi + 1}. {question}
+                </legend>
+                <div className="mt-2 space-y-2">
+                  {options.map((opt, oi) => (
+                    <label
+                      key={oi}
+                      className="flex min-h-11 cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-white/80 hover:bg-white/5"
+                    >
+                      <input
+                        type="radio"
+                        name={`${task.key}-q${q.id}`}
+                        checked={answers[q.id] === oi}
+                        onChange={() =>
+                          setAnswers((a) => ({ ...a, [q.id]: oi }))
+                        }
+                        className="h-4 w-4 accent-[#C9A84C]"
+                      />
+                      <span>{opt}</span>
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+            );
+          })}
+        </div>
+      )}
+
       {task.status === "available" && (
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          {task.verification === "manual" && (
+          {task.verification === "manual" && !task.has_quiz && (
             <input
               type="url"
               value={link}
@@ -108,13 +189,30 @@ function MissionRow({ task }: { task: QualificationTask }) {
             />
           )}
           <button
-            onClick={handleComplete}
+            onClick={handleAction}
             disabled={isLoading}
-            className="inline-flex items-center gap-2 rounded-lg bg-gold px-4 py-2 text-sm font-medium text-[#0B0B0D] transition hover:opacity-90 disabled:opacity-60"
+            className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-gold px-4 py-2 text-sm font-medium text-[#0B0B0D] transition hover:opacity-90 disabled:opacity-60"
           >
             {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-            {task.verification === "manual" ? t.submit : t.complete}
+            {task.has_quiz
+              ? quizOpen
+                ? t.submitAnswers
+                : t.startQuiz
+              : task.verification === "manual"
+                ? t.submit
+                : t.complete}
           </button>
+          {quizOpen && (
+            <button
+              onClick={() => {
+                setQuizOpen(false);
+                setAnswers({});
+              }}
+              className="inline-flex min-h-11 items-center rounded-lg border border-hairline px-4 py-2 text-sm text-white/70 transition hover:bg-white/5"
+            >
+              {t.cancel}
+            </button>
+          )}
         </div>
       )}
     </li>
