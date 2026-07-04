@@ -50,10 +50,13 @@ export const clearAllAuthState = async (
   // 4. Clear localStorage items
   localStorage.removeItem(PERSIST_AUTH_KEY);
   localStorage.removeItem(PERSIST_ONBOARDING_KEY);
-  
+  // Session hygiene (audit AUTH-01): drop the analytics session id too so no
+  // identifier lingers on shared devices after logout.
+  localStorage.removeItem("tryfann_sid");
+
   // Note: REMEMBERED_EMAIL_KEY and REMEMBERED_PASSWORD_KEY are intentionally NOT cleared
   // to preserve "remember me" functionality
-  
+
   if (clearExpiredPage) {
     localStorage.removeItem(EXPIRED_LAST_VISIT_PAGE_KEY);
   }

@@ -58,7 +58,7 @@ export function DashboardWelcome({
             href="https://instagram.com/tryfann"
             target="_blank"
             rel="noopener noreferrer"
-            className="w-10 h-10 bg-[#191922] rounded-lg flex items-center justify-center text-[#d4af37] hover:bg-[#d4af37]/10 hover:text-[#fbbf24] transition-all border border-[#d4af37]/20"
+            className="w-11 h-11 bg-[#191922] rounded-lg flex items-center justify-center text-[#d4af37] hover:bg-[#d4af37]/10 hover:text-[#fbbf24] transition-all border border-[#d4af37]/20"
             aria-label="Instagram"
           >
             <Instagram className="w-5 h-5" />
@@ -67,7 +67,7 @@ export function DashboardWelcome({
             href="https://twitter.com/tryfann"
             target="_blank"
             rel="noopener noreferrer"
-            className="w-10 h-10 bg-[#191922] rounded-lg flex items-center justify-center text-[#d4af37] hover:bg-[#d4af37]/10 hover:text-[#fbbf24] transition-all border border-[#d4af37]/20"
+            className="w-11 h-11 bg-[#191922] rounded-lg flex items-center justify-center text-[#d4af37] hover:bg-[#d4af37]/10 hover:text-[#fbbf24] transition-all border border-[#d4af37]/20"
             aria-label="Twitter"
           >
             <Twitter className="w-5 h-5" />
@@ -76,7 +76,7 @@ export function DashboardWelcome({
             href="https://linkedin.com/company/tryfann"
             target="_blank"
             rel="noopener noreferrer"
-            className="w-10 h-10 bg-[#191922] rounded-lg flex items-center justify-center text-[#d4af37] hover:bg-[#d4af37]/10 hover:text-[#fbbf24] transition-all border border-[#d4af37]/20"
+            className="w-11 h-11 bg-[#191922] rounded-lg flex items-center justify-center text-[#d4af37] hover:bg-[#d4af37]/10 hover:text-[#fbbf24] transition-all border border-[#d4af37]/20"
             aria-label="LinkedIn"
           >
             <Linkedin className="w-5 h-5" />
@@ -85,7 +85,7 @@ export function DashboardWelcome({
             href="https://facebook.com/tryfann"
             target="_blank"
             rel="noopener noreferrer"
-            className="w-10 h-10 bg-[#191922] rounded-lg flex items-center justify-center text-[#d4af37] hover:bg-[#d4af37]/10 hover:text-[#fbbf24] transition-all border border-[#d4af37]/20"
+            className="w-11 h-11 bg-[#191922] rounded-lg flex items-center justify-center text-[#d4af37] hover:bg-[#d4af37]/10 hover:text-[#fbbf24] transition-all border border-[#d4af37]/20"
             aria-label="Facebook"
           >
             <Facebook className="w-5 h-5" />

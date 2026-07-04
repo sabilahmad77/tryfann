@@ -247,7 +247,7 @@ export function DashboardNav({
           {/* Mobile Menu Button */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="text-[#F2F2F3] p-2 hover:text-[#C59B48] hover:bg-[#C59B48]/10 rounded-lg transition-all cursor-pointer"
+            className="text-[#F2F2F3] p-2 min-h-11 min-w-11 hover:text-[#C59B48] hover:bg-[#C59B48]/10 rounded-lg transition-all cursor-pointer"
           >
             {mobileMenuOpen ? (
               <X className="w-6 h-6" />

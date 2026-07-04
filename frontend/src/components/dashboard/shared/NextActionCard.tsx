@@ -94,7 +94,7 @@ export function NextActionCard() {
       {cta && (
         <button
           onClick={() => navigate(cta.to)}
-          className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-amber-500 to-yellow-400 px-5 py-2.5 text-sm font-medium text-[#0B0B0D] transition hover:opacity-90"
+          className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-gradient-to-r from-amber-500 to-yellow-400 px-5 py-2.5 text-sm font-medium text-[#0B0B0D] transition hover:opacity-90"
         >
           {cta.label}
           <ArrowRight className="h-4 w-4" />

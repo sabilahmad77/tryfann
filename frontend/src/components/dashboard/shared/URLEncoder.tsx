@@ -231,7 +231,7 @@ export function URLEncoder({
             disabled={isGenerating || isReferralCode || !profileCompleted}
             size="sm"
             variant="outline"
-            className="text-xs transition-all duration-200 cursor-pointer disabled:bg-disabled disabled:cursor-not-allowed"
+            className="text-xs min-h-11 transition-all duration-200 cursor-pointer disabled:bg-disabled disabled:cursor-not-allowed"
           >
             {isGenerating ? (
               <>
@@ -257,7 +257,7 @@ export function URLEncoder({
           <Button
             onClick={handleCopy}
             disabled={!referralLink}
-            className="hover:shadow-lg hover:shadow-primary/50 transition-all disabled:bg-disabled disabled:cursor-not-allowed cursor-pointer"
+            className="min-h-11 hover:shadow-lg hover:shadow-primary/50 transition-all disabled:bg-disabled disabled:cursor-not-allowed cursor-pointer"
           >
             {copied ? (
               <>
