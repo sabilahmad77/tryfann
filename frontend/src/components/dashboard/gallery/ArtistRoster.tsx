@@ -203,7 +203,9 @@ export function ArtistRoster({
 
   const handleAddArtistClick = () => {
     if (!profileCompleted) {
+      // Honest gate (audit BRK-02 / plan TECH-2): explain + route forward.
       toast.error(t.profileRequired);
+      onCompleteProfile?.();
       return;
     }
     setIsModalOpen(true);
@@ -296,8 +298,10 @@ export function ArtistRoster({
         <Button
           size="sm"
           onClick={handleAddArtistClick}
-          disabled={!profileCompleted}
-          className="hover:shadow-lg hover:shadow-primary/50 border-0 transition-all duration-200 cursor-pointer disabled:bg-disabled disabled:cursor-not-allowed"
+          aria-disabled={!profileCompleted}
+          className={`hover:shadow-lg hover:shadow-primary/50 border-0 transition-all duration-200 cursor-pointer min-h-11 ${
+            !profileCompleted ? "opacity-70" : ""
+          }`}
         >
           {!profileCompleted && <Lock className={`w-3 h-3 ${isRTL ? "ml-2" : "mr-2"}`} />}
           <Plus className={`w-4 h-4 ${isRTL ? "ml-2" : "mr-2"}`} />

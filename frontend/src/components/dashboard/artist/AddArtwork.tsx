@@ -249,7 +249,10 @@ export function AddArtwork({
 
   const handleAddClick = () => {
     if (!profileCompleted) {
+      // Honest gate (audit BRK-02 / plan TECH-2): never a silent dead button.
+      // Explain why it's locked and route to the step that unlocks it.
       toast.error(t.profileRequired);
+      onCompleteProfile?.();
       return;
     }
     handleOpenCreate();
@@ -298,8 +301,10 @@ export function AddArtwork({
           <Button
             type="button"
             onClick={handleAddClick}
-            disabled={!profileCompleted}
-            className="relative overflow-hidden bg-gradient-to-r from-[#C59B48] to-[#D6AE5A] text-[#121217] px-4 py-2 rounded-xl hover:opacity-90 transition-all group cursor-pointer disabled:bg-disabled disabled:cursor-not-allowed"
+            aria-disabled={!profileCompleted}
+            className={`relative overflow-hidden bg-gradient-to-r from-[#C59B48] to-[#D6AE5A] text-[#121217] px-4 py-2 rounded-xl hover:opacity-90 transition-all group cursor-pointer min-h-11 ${
+              !profileCompleted ? "opacity-70" : ""
+            }`}
           >
             <span
               className={`relative flex items-center gap-2 ${isRTL ? "flex-row-reverse" : ""

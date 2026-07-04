@@ -15,6 +15,11 @@ import { useNavigate } from "react-router-dom";
 import { Oval } from "react-loader-spinner";
 import { updateStepData } from "@/store/onboardingSlice";
 
+// How long the boot fetch may block the form. Past this we render the form
+// with defaults and let the data merge in when (if) it arrives — the page
+// must never dead-end on a slow/cold API (audit BRK-01 / plan TECH-1).
+const LOADING_TIMEOUT_MS = 8000;
+
 export function ProfileCompletionPage() {
   const { language } = useLanguage();
   const navigate = useNavigate();
@@ -22,6 +27,7 @@ export function ProfileCompletionPage() {
   const persona = useSelector((state: RootState) => state.auth.persona);
   const storedUser = useSelector((state: RootState) => state.auth.user);
   const [initialStep, setInitialStep] = useState<number | undefined>(undefined);
+  const [loadTimedOut, setLoadTimedOut] = useState(false);
   const hasProcessedRef = useRef(false);
 
   // Fetch user details from API
@@ -34,6 +40,13 @@ export function ProfileCompletionPage() {
     refetchOnMountOrArgChange: true,
     skip: !persona, // Skip if no persona
   });
+
+  // Hard timeout: never let the loader block the form indefinitely.
+  useEffect(() => {
+    if (!isLoading) return;
+    const t = window.setTimeout(() => setLoadTimedOut(true), LOADING_TIMEOUT_MS);
+    return () => window.clearTimeout(t);
+  }, [isLoading]);
 
   // Process user details data when it's available
   useEffect(() => {
@@ -110,8 +123,10 @@ export function ProfileCompletionPage() {
     return null;
   }
 
-  // Show loading state while fetching user details
-  if (isLoading && !hasProcessedRef.current) {
+  // Show loading state while fetching user details — but only briefly.
+  // After LOADING_TIMEOUT_MS (or on error) we render the form with defaults;
+  // the merge effect above still applies data if the response arrives later.
+  if (isLoading && !loadTimedOut && !isError && !hasProcessedRef.current) {
     return (
       <div className="min-h-screen bg-[#0B0B0D] flex items-center justify-center">
         <div className="flex flex-col items-center justify-center text-center">

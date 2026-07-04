@@ -374,7 +374,9 @@ export function MyCollection({
 
   const handleAddClick = () => {
     if (!profileCompleted) {
+      // Honest gate (audit BRK-02 / plan TECH-2): explain + route forward.
       toast.error(t.profileRequired);
+      onCompleteProfile?.();
       return;
     }
     setIsModalOpen(true);
@@ -414,8 +416,8 @@ export function MyCollection({
           <Button
             size="sm"
             onClick={handleAddClick}
-            disabled={!profileCompleted}
-            className="border-0 cursor-pointer disabled:bg-disabled disabled:cursor-not-allowed"
+            aria-disabled={!profileCompleted}
+            className={`border-0 cursor-pointer min-h-11 ${!profileCompleted ? "opacity-70" : ""}`}
           >
             {!profileCompleted && <Lock className={`w-3 h-3 ${isRTL ? "ml-2" : "mr-2"}`} />}
             <Plus className={`w-4 h-4 ${isRTL ? "ml-2" : "mr-2"}`} />
