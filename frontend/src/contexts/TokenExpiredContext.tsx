@@ -1,4 +1,4 @@
-import React, { useState, ReactNode, useCallback, useEffect } from "react";
+import { useState, ReactNode, useCallback, useEffect } from "react";
 import { TokenExpiredContext } from "./token-expired-context";
 
 export function TokenExpiredProvider({ children }: { children: ReactNode }) {

@@ -436,14 +436,9 @@ export function ProfilePage() {
   const mappedDashboardStats = useMemo(() => {
     if (isGallery && dashboardStatsGalleryData?.data) {
       // Map Gallery stats
+      // Legacy points/tier fields retired (plan TECH-3/SCORE-3); only real
+      // counts remain. Tier + readiness come from /qualification below.
       return {
-        total_points: dashboardStatsGalleryData.data.total_points ?? 0,
-        tier_name: dashboardStatsGalleryData.data.tier_name,
-        tier_progress_percentage: dashboardStatsGalleryData.data.tier_progress_percentage ?? 0,
-        next_tier_name: dashboardStatsGalleryData.data.next_tier_name,
-        next_tier_need_points: dashboardStatsGalleryData.data.next_tier_need_points ?? 0,
-        influence_points: dashboardStatsGalleryData.data.influence_points ?? 0,
-        provenance_points: dashboardStatsGalleryData.data.provenance_points ?? 0,
         referral_count: dashboardStatsGalleryData.data.referral_count ?? 0,
         user_followers: dashboardStatsGalleryData.data.user_followers ?? 0,
         user_following: dashboardStatsGalleryData.data.user_following ?? 0,
@@ -454,13 +449,6 @@ export function ProfilePage() {
     if (isAmbassador && dashboardStatsAmbassadorData?.data) {
       // Map Ambassador stats
       return {
-        total_points: dashboardStatsAmbassadorData.data.total_points ?? 0,
-        tier_name: dashboardStatsAmbassadorData.data.tier_name,
-        tier_progress_percentage: dashboardStatsAmbassadorData.data.tier_progress_percentage ?? 0,
-        next_tier_name: dashboardStatsAmbassadorData.data.next_tier_name,
-        next_tier_need_points: dashboardStatsAmbassadorData.data.next_tier_need_points ?? 0,
-        influence_points: dashboardStatsAmbassadorData.data.influence_points ?? 0,
-        provenance_points: dashboardStatsAmbassadorData.data.provenance_points ?? 0,
         referral_count: dashboardStatsAmbassadorData.data.referral_count ?? 0,
         user_followers: dashboardStatsAmbassadorData.data.user_followers ?? 0,
         user_following: dashboardStatsAmbassadorData.data.user_following ?? 0,
@@ -471,13 +459,6 @@ export function ProfilePage() {
     // Default stats (Collector/Artist)
     if (dashboardStatsData?.data) {
       return {
-        total_points: dashboardStatsData.data.total_points ?? 0,
-        tier_name: dashboardStatsData.data.tier_name,
-        tier_progress_percentage: dashboardStatsData.data.tier_progress_percentage ?? 0,
-        next_tier_name: dashboardStatsData.data.next_tier_name,
-        next_tier_need_points: dashboardStatsData.data.next_tier_need_points ?? 0,
-        influence_points: dashboardStatsData.data.influence_points ?? 0,
-        provenance_points: dashboardStatsData.data.provenance_points ?? 0,
         referral_count: dashboardStatsData.data.referral_count ?? 0,
         user_followers: dashboardStatsData.data.user_followers ?? 0,
         user_following: dashboardStatsData.data.user_following ?? 0,
@@ -494,11 +475,6 @@ export function ProfilePage() {
     dashboardStatsData,
   ]);
 
-  // Get tier information directly from dashboard stats API
-  const totalPoints =
-    mappedDashboardStats?.total_points ??
-    parseInt(storedUser?.points || "0", 10) ??
-    0;
 
   // Tier + score come from the qualification engine ONLY (never the legacy
   // market_final points/tier names like Explorer/Patron, never an arbitrary
@@ -666,13 +642,6 @@ export function ProfilePage() {
       role: storedUser.role || "",
       bio: storedUser.bio || "",
       memberSince: formatDate(storedUser.date_joined),
-      totalPoints,
-      influencePoints:
-        mappedDashboardStats?.influence_points ??
-        Math.floor(parseInt(storedUser.points || "0", 10) * 0.6),
-      provenancePoints:
-        mappedDashboardStats?.provenance_points ??
-        Math.floor(parseInt(storedUser.points || "0", 10) * 0.4),
       referrals:
         mappedDashboardStats?.referral_count ??
         storedUser.total_referral_clicks ??

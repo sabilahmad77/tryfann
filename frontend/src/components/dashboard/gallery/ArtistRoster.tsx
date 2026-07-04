@@ -165,10 +165,11 @@ export function ArtistRoster({
 
       setArtists(transformedArtists);
     } else if (!artistsData && !isLoadingArtists && !artistsError) {
-      // Fallback to default data if API returns no data
-      setArtists(t.artists);
+      // No data -> honest empty state. Never show seeded demo artists
+      // (Truth Protocol / audit FAKE-01 pattern): an empty roster is empty.
+      setArtists([]);
     }
-  }, [profileCompleted, artistsData, isLoadingArtists, artistsError, t.artists]);
+  }, [profileCompleted, artistsData, isLoadingArtists, artistsError]);
 
   const generateInitials = (name: string) => {
     const names = name.trim().split(" ");

@@ -6,7 +6,7 @@ export const userApi = baseApi.injectEndpoints({
     // Get user profile
     getUserProfile: builder.query<User, string>({
       query: (userId) => `/users/${userId}`,
-      providesTags: (result, error, userId) => [{ type: 'User', id: userId }],
+      providesTags: (_result, _error, userId) => [{ type: 'User', id: userId }],
     }),
 
     // Update user profile
@@ -16,7 +16,7 @@ export const userApi = baseApi.injectEndpoints({
         method: 'PATCH',
         body: data,
       }),
-      invalidatesTags: (result, error, { userId }) => [{ type: 'User', id: userId }],
+      invalidatesTags: (_result, _error, { userId }) => [{ type: 'User', id: userId }],
     }),
 
     // Get all users (example)

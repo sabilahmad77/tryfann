@@ -33,8 +33,8 @@ interface MyCollectionProps {
   onCompleteProfile?: () => void;
   statsData?: {
     artwork_count?: number;
+    collection_count?: number;
     portfolio_value?: number;
-    growth?: number;
     [key: string]: unknown;
   };
   /** Callback to refetch dashboard stats after collection is modified */
@@ -47,6 +47,7 @@ const content = {
     totalPieces: "Total Pieces",
     totalValue: "Portfolio Value",
     growth: "Growth",
+    verifiedPieces: "Pieces Listed",
     addPiece: "Add Artwork",
     filter: "Filter",
     recent: "Recent Acquisitions",
@@ -105,6 +106,7 @@ const content = {
     totalPieces: "إجمالي القطع",
     totalValue: "قيمة المحفظة",
     growth: "النمو",
+    verifiedPieces: "القطع المدرجة",
     addPiece: "إضافة عمل فني",
     filter: "تصفية",
     recent: "الاقتناءات الأخيرة",
@@ -225,10 +227,11 @@ export function MyCollection({
 
       setArtworkList(transformedArtworks);
     } else if (!artworksData && !isLoadingArtworks && !artworksError) {
-      // Fallback to default data if API returns no data
-      setArtworkList(t.pieces);
+      // No data -> honest empty state. Never show seeded demo pieces
+      // (Truth Protocol / audit FAKE-01): an empty collection is empty.
+      setArtworkList([]);
     }
-  }, [profileCompleted, artworksData, isLoadingArtworks, artworksError, t.pieces]);
+  }, [profileCompleted, artworksData, isLoadingArtworks, artworksError]);
 
   const getCategoryColor = (category: string) => {
     switch (category.toLowerCase()) {
@@ -456,9 +459,12 @@ export function MyCollection({
             <span className="text-xs text-[#8A8EA0]">{t.totalValue}</span>
           </div>
           <p className="text-2xl text-[#F2F2F3]">
+            {/* Real computed value from the user's own pieces (AED).
+                No growth %: there is no history to compute one from, and we
+                never fabricate one (audit FAKE-01/FAKE-05). */}
             {statsData?.portfolio_value
-              ? `$${statsData.portfolio_value.toFixed(1)}K`
-              : "$0K"}
+              ? `AED ${Number(statsData.portfolio_value).toLocaleString()}`
+              : "AED 0"}
           </p>
         </motion.div>
 
@@ -471,12 +477,10 @@ export function MyCollection({
               }`}
           >
             <TrendingUp className="w-4 h-4 text-[#C59B48]" />
-            <span className="text-xs text-[#8A8EA0]">{t.growth}</span>
+            <span className="text-xs text-[#8A8EA0]">{t.verifiedPieces}</span>
           </div>
-          <p className="text-2xl text-emerald-400">
-            {statsData?.growth !== undefined
-              ? `+${statsData.growth.toFixed(1)}%`
-              : "+0%"}
+          <p className="text-2xl text-[#F2F2F3]">
+            {statsData?.collection_count ?? artworkList.length}
           </p>
         </motion.div>
       </div>

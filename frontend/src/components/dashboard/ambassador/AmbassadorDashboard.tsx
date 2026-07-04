@@ -10,7 +10,6 @@ import {
   Twitter,
   Target,
   BarChart3,
-  ArrowUpRight,
   UserPlus,
   Check,
   Loader2,
@@ -42,15 +41,16 @@ const content = {
     welcome: "Welcome back",
     subtitle: "Track your performance and grow your influence",
     stats: {
-      totalReach: "Total Reach",
-      engagement: "Engagement Rate",
-      conversions: "Conversions",
+      linkClicks: "Link Clicks",
+      verifiedJoins: "Verified Joins",
+      pendingInvites: "Pending Invites",
       totalReferrals: "Total Referrals",
       followers: "Followers",
     },
     socialMetrics: {
-      title: "Social Media Performance",
-      lastUpdated: "Last updated 2 hours ago",
+      title: "Your Declared Channels",
+      subtitle: "Follower ranges you shared during onboarding",
+      empty: "No channels declared yet — add them from your profile.",
       engagement: "Engagement",
       posts: "Posts",
     },
@@ -74,15 +74,16 @@ const content = {
       ambassador: "سفير",
     },
     stats: {
-      totalReach: "إجمالي الوصول",
-      engagement: "معدل التفاعل",
-      conversions: "التحويلات",
+      linkClicks: "نقرات الرابط",
+      verifiedJoins: "انضمامات موثّقة",
+      pendingInvites: "دعوات معلّقة",
       totalReferrals: "إجمالي الإحالات",
       followers: "المتابعون",
     },
     socialMetrics: {
-      title: "أداء وسائل التواصل",
-      lastUpdated: "آخر تحديث منذ ساعتين",
+      title: "قنواتك المعلنة",
+      subtitle: "نطاقات المتابعين التي شاركتها أثناء التسجيل",
+      empty: "لم تُعلن أي قنوات بعد — أضفها من ملفك الشخصي.",
       engagement: "التفاعل",
       posts: "المنشورات",
     },
@@ -152,15 +153,16 @@ export function AmbassadorDashboard() {
   // Extract data from API response
   const apiData = ambassadorStatsData?.data || {};
 
+  // Real, earned referral funnel only — reach/engagement/rewards fabrications
+  // were retired with the legacy API (audit FAKE-02 / plan ROLE-2).
   const totalReferrals = apiData.referral_count || 0;
   const activeReferrals = apiData.active_referral_count || 0;
-  const totalReach = apiData.total_reach || 0;
-  const engagementRate = apiData.engagement_rate || 0;
   const conversions = apiData.conversation || 0; // Note: API uses "conversation" not "conversions"
-  const rewardsPoints = apiData.rewards_point || 0; // Note: API uses singular "rewards_point"
 
-  // Get referral link from referralCodeData API or fallback
+  // Get referral link: prefer the stats payload (real code, self-healed
+  // server-side), then the user record.
   const referralLink =
+    apiData.referral_link ||
     referralCodeData?.data?.referral_link ||
     (storedUser?.referral_code
       ? `${FE_BASE_URL}/ref/${storedUser.referral_code}`
@@ -189,7 +191,10 @@ export function AmbassadorDashboard() {
     document.body.removeChild(textArea);
   };
 
-  // Build social media data from API
+  // Channels the user DECLARED at onboarding (follower ranges only).
+  // Engagement %, post counts and trends were fabricated by the legacy API
+  // and are gone (audit FAKE-02); only real integrations may reintroduce
+  // per-network analytics.
   const socialStatsData = apiData.social_stats;
   const socialStats = [
     {
@@ -197,55 +202,30 @@ export function AmbassadorDashboard() {
       icon: Instagram,
       bgClass: "bg-gradient-to-br from-[#8134af] via-[#dd2a7b] via-[#f58529] to-[#feda75]",
       iconColor: "text-white",
-      followers: socialStatsData?.instagram_follower || "N/A",
-      engagement: socialStatsData?.instagram_engagement
-        ? `${socialStatsData.instagram_engagement}%`
-        : "—",
-      posts: socialStatsData?.instagram_post || 0,
-      // trend: "+12%", // Mock trend data (removed from UI)
+      followers: socialStatsData?.instagram_follower || null,
     },
     {
       platform: "TikTok",
       icon: Video,
       bgClass: "bg-[#000000]",
       iconColor: "text-white",
-      followers: socialStatsData?.tiktok_follower || "N/A",
-      engagement: socialStatsData?.tiktok_engagement
-        ? `${socialStatsData.tiktok_engagement}%`
-        : "—",
-      posts: socialStatsData?.tiktok_post || 0,
-      // trend: "+24%", // Mock trend data (removed from UI)
+      followers: socialStatsData?.tiktok_follower || null,
     },
     {
       platform: "YouTube",
       icon: Youtube,
       bgClass: "bg-[#FF0000]",
       iconColor: "text-white",
-      followers: socialStatsData?.youtube_subscriber || "N/A",
-      engagement: socialStatsData?.youtube_engagement
-        ? `${socialStatsData.youtube_engagement}%`
-        : "—",
-      posts: socialStatsData?.youtube_post || 0,
-      // trend: "+8%", // Mock trend data (removed from UI)
+      followers: socialStatsData?.youtube_subscriber || null,
     },
     {
       platform: "Twitter",
       icon: Twitter,
       bgClass: "bg-[#1DA1F2]",
       iconColor: "text-white",
-      followers: socialStatsData?.twitter_follower || "N/A",
-      engagement: socialStatsData?.twitter_engagement
-        ? `${socialStatsData.twitter_engagement}%`
-        : "—",
-      posts: socialStatsData?.twitter_post || 0,
-      // trend: "+5%", // Mock trend data (removed from UI)
+      followers: socialStatsData?.twitter_follower || null,
     },
-  ].filter((stat) => {
-    // Show platform if it has followers data (not null/N/A) or has posts
-    const hasFollowers = stat.followers && stat.followers !== "N/A";
-    const hasPosts = stat.posts > 0;
-    return hasFollowers || hasPosts;
-  }); // Only show platforms with data
+  ].filter((stat) => Boolean(stat.followers)); // only declared channels
 
   return (
     <DashboardLayout currentPage="dashboard">
@@ -262,7 +242,9 @@ export function AmbassadorDashboard() {
       <NextActionCard />
       <MissionsCard />
 
-      {/* Key Stats (Top Stats) — ambassador reach */}
+      {/* Key Stats — real referral funnel only (audit FAKE-02 / plan ROLE-2).
+          Every number below is earned: link clicks, referrals, verified
+          joins, pending invites. No invented reach/engagement/trends. */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -275,72 +257,16 @@ export function AmbassadorDashboard() {
               <Users className="w-5 h-5 text-cyan-400" />
             </div>
             <div className="flex-1">
-              <p className="text-[#8A8EA0] text-sm">{t.stats.totalReach}</p>
+              <p className="text-[#8A8EA0] text-sm">{t.stats.linkClicks}</p>
               {isLoadingAmbassadorStats ? (
                 <Loader2 className="w-5 h-5 text-[#C59B48] animate-spin mt-1" />
               ) : (
                 <p className="text-2xl text-[#F2F2F3]">
-                  {totalReach >= 1000
-                    ? `${(totalReach / 1000).toFixed(1)}K`
-                    : totalReach.toFixed(1)}
+                  {apiData.total_referral_clicks ?? 0}
                 </p>
               )}
             </div>
           </div>
-          {!isLoadingAmbassadorStats && (
-            <div className="flex items-center gap-1 text-green-400 text-sm">
-              <ArrowUpRight className="w-4 h-4" />
-              <span>+18%</span>
-            </div>
-          )}
-        </Card>
-
-        <Card className="glass border-[#C59B48]/20 p-6 bg-gradient-to-br from-[#191922]/80 to-[#0B0B0D]/80">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center">
-              <Heart className="w-5 h-5 text-purple-400" />
-            </div>
-            <div className="flex-1">
-              <p className="text-[#8A8EA0] text-sm">{t.stats.engagement}</p>
-              {isLoadingAmbassadorStats ? (
-                <Loader2 className="w-5 h-5 text-[#C59B48] animate-spin mt-1" />
-              ) : (
-                <p className="text-2xl text-[#F2F2F3]">
-                  {engagementRate > 0
-                    ? `${engagementRate.toFixed(1)}%`
-                    : "4.8%"}
-                </p>
-              )}
-            </div>
-          </div>
-          {!isLoadingAmbassadorStats && (
-            <div className="flex items-center gap-1 text-green-400 text-sm">
-              <ArrowUpRight className="w-4 h-4" />
-              <span>+0.6%</span>
-            </div>
-          )}
-        </Card>
-
-        <Card className="glass border-[#C59B48]/20 p-6 bg-gradient-to-br from-[#191922]/80 to-[#0B0B0D]/80">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center">
-              <Target className="w-5 h-5 text-green-400" />
-            </div>
-            <div className="flex-1">
-              <p className="text-[#8A8EA0] text-sm">{t.stats.conversions}</p>
-              {isLoadingAmbassadorStats ? (
-                <Loader2 className="w-5 h-5 text-[#C59B48] animate-spin mt-1" />
-              ) : (
-                <p className="text-2xl text-[#F2F2F3]">{conversions || 0}</p>
-              )}
-            </div>
-          </div>
-          {!isLoadingAmbassadorStats && (
-            <div className="flex items-center gap-1 text-green-400 text-sm">
-              <ArrowUpRight className="w-4 h-4" />
-              <span>+23%</span>
-            </div>
-          )}
         </Card>
 
         <Card className="glass border-[#C59B48]/20 p-6 bg-gradient-to-br from-[#191922]/80 to-[#0B0B0D]/80">
@@ -357,12 +283,40 @@ export function AmbassadorDashboard() {
               )}
             </div>
           </div>
-          {!isLoadingAmbassadorStats && (
-            <div className="flex items-center gap-1 text-green-400 text-sm">
-              <ArrowUpRight className="w-4 h-4" />
-              <span>+5 {t.referrals.thisWeek}</span>
+        </Card>
+
+        <Card className="glass border-[#C59B48]/20 p-6 bg-gradient-to-br from-[#191922]/80 to-[#0B0B0D]/80">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center">
+              <Target className="w-5 h-5 text-green-400" />
             </div>
-          )}
+            <div className="flex-1">
+              <p className="text-[#8A8EA0] text-sm">{t.stats.verifiedJoins}</p>
+              {isLoadingAmbassadorStats ? (
+                <Loader2 className="w-5 h-5 text-[#C59B48] animate-spin mt-1" />
+              ) : (
+                <p className="text-2xl text-[#F2F2F3]">{conversions || 0}</p>
+              )}
+            </div>
+          </div>
+        </Card>
+
+        <Card className="glass border-[#C59B48]/20 p-6 bg-gradient-to-br from-[#191922]/80 to-[#0B0B0D]/80">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center">
+              <Heart className="w-5 h-5 text-purple-400" />
+            </div>
+            <div className="flex-1">
+              <p className="text-[#8A8EA0] text-sm">{t.stats.pendingInvites}</p>
+              {isLoadingAmbassadorStats ? (
+                <Loader2 className="w-5 h-5 text-[#C59B48] animate-spin mt-1" />
+              ) : (
+                <p className="text-2xl text-[#F2F2F3]">
+                  {apiData.pending ?? 0}
+                </p>
+              )}
+            </div>
+          </div>
         </Card>
       </motion.div>
 
@@ -389,15 +343,23 @@ export function AmbassadorDashboard() {
           transition={{ delay: 0.35 }}
         >
           <Card className="glass border-[#C59B48]/20 p-6 bg-gradient-to-br from-[#191922]/80 to-[#0B0B0D]/80 h-full">
-            <div className="flex items-center gap-2 mb-6">
+            <div className="flex items-center gap-2 mb-1">
               <BarChart3 className="w-6 h-6 text-cyan-400" />
               <h3 className="text-2xl text-[#F2F2F3]">{t.socialMetrics.title}</h3>
-              <span className="ml-auto text-[#8A8EA0] text-sm">
-                {t.socialMetrics.lastUpdated}
-              </span>
             </div>
+            {/* Honest framing (audit FAKE-02): these are the follower ranges
+                the user declared at onboarding — not live analytics. No
+                engagement %, post counts or "last updated" claims. */}
+            <p className="text-[#8A8EA0] text-sm mb-6">
+              {t.socialMetrics.subtitle}
+            </p>
 
             <div className="grid grid-cols-1 gap-4">
+              {socialStats.length === 0 && (
+                <p className="text-[#8A8EA0] text-sm py-4 text-center">
+                  {t.socialMetrics.empty}
+                </p>
+              )}
               {socialStats.map((stat, index) => {
                 const Icon = stat.icon;
                 return (
@@ -408,8 +370,7 @@ export function AmbassadorDashboard() {
                     transition={{ delay: 0.4 + index * 0.05 }}
                     className="p-5 rounded-lg glass border border-[#C59B48]/10 hover:border-[#C59B48]/30 transition-all bg-gradient-to-br from-[#0B0B0D]/50 to-[#191922]/50"
                   >
-                    {/* Header Row */}
-                    <div className="flex items-center gap-3 mb-4 pb-3 border-b border-[#C59B48]/10">
+                    <div className="flex items-center gap-3">
                       <div
                         className={`w-12 h-12 rounded-xl ${stat.bgClass} flex items-center justify-center`}
                       >
@@ -420,31 +381,8 @@ export function AmbassadorDashboard() {
                           {stat.platform}
                         </h4>
                         <p className="text-[#8A8EA0] text-xs">
-                          {stat.followers}
+                          {t.stats.followers}: {stat.followers}
                         </p>
-                      </div>
-                      {/* Trend badge removed (was using mock trend data) */}
-                    </div>
-
-                    {/* Metrics Grid - Tile Layout */}
-                    <div className="grid grid-cols-3 gap-3">
-                      <div className="p-3 rounded-lg bg-[#0B0B0D]/80 border border-[#C59B48]/10 text-center">
-                        <p className="text-[#8A8EA0] text-xs mb-1">Followers</p>
-                        <p className="text-[#F2F2F3]">{stat.followers}</p>
-                      </div>
-
-                      <div className="p-3 rounded-lg bg-[#0B0B0D]/80 border border-[#C59B48]/10 text-center">
-                        <p className="text-[#8A8EA0] text-xs mb-1">
-                          {t.socialMetrics.engagement}
-                        </p>
-                        <p className="text-[#F2F2F3]">{stat.engagement}</p>
-                      </div>
-
-                      <div className="p-3 rounded-lg bg-[#0B0B0D]/80 border border-[#C59B48]/10 text-center">
-                        <p className="text-[#8A8EA0] text-xs mb-1">
-                          {t.socialMetrics.posts}
-                        </p>
-                        <p className="text-[#F2F2F3]">{stat.posts}</p>
                       </div>
                     </div>
                   </motion.div>
@@ -487,10 +425,8 @@ export function AmbassadorDashboard() {
                     <p className="text-4xl text-[#F2F2F3] mb-2">
                       {totalReferrals}
                     </p>
-                    <div className="flex items-center gap-2 text-green-400 text-sm">
-                      <ArrowUpRight className="w-4 h-4" />
-                      <span>+5 {t.referrals.thisWeek}</span>
-                    </div>
+                    {/* No invented "+N this week" delta — only real counts
+                        render here (audit FAKE-02/FAKE-05). */}
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
@@ -499,17 +435,15 @@ export function AmbassadorDashboard() {
                         {t.referrals.active}
                       </p>
                       <p className="text-2xl text-[#F2F2F3]">
-                        {activeReferrals || totalReferrals}
+                        {activeReferrals}
                       </p>
                     </div>
                     <div className="p-3 rounded-lg bg-[#0B0B0D] border border-[#C59B48]/10">
                       <p className="text-[#8A8EA0] text-xs mb-1">
-                        {t.referrals.rewards}
+                        {t.stats.verifiedJoins}
                       </p>
                       <p className="text-2xl text-primary">
-                        {rewardsPoints >= 1000
-                          ? `${(rewardsPoints / 1000).toFixed(0)}K`
-                          : rewardsPoints}
+                        {conversions || 0}
                       </p>
                     </div>
                   </div>

@@ -73,9 +73,15 @@ export function DashboardPage() {
   // Read from Redux store first (immediate, no API wait)
   const reduxProfileCompleted = useSelector((state: RootState) => state.auth.profileCompleted);
 
+  // Concierge separation is enforced at the REQUEST level (plan UX-4):
+  // Gallery/Investor sessions never call the game-track stats endpoint, so
+  // no game payload reaches a concierge user even in data.
+  const conciergeSkip = isConciergeRole(userRole || persona?.toLowerCase() || "");
+
   // Fetch dashboard stats to get profile_complete from API
   const { data: dashboardStatsData, refetch: refetchDashboardStats } = useGetDashboardStatsQuery(undefined, {
     refetchOnMountOrArgChange: true,
+    skip: conciergeSkip,
   });
 
   // Get profile_complete from API response

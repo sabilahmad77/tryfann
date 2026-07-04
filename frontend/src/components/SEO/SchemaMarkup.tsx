@@ -126,7 +126,10 @@ export function SchemaMarkup({ faqData }: SchemaMarkupProps) {
 
   // Combine all schemas
   const schemas = useMemo(() => {
-    const allSchemas = [organizationSchema, websiteSchema];
+    const allSchemas: Record<string, unknown>[] = [
+      organizationSchema,
+      websiteSchema,
+    ];
     
     if (faqSchema) {
       allSchemas.push(faqSchema);

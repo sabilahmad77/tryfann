@@ -62,6 +62,17 @@ export const routes: RouteConfig[] = [
     description: "User registration page - accessible without token",
   },
   {
+    path: ROUTES.REFERRAL,
+    component: () =>
+      import("@/pages/ReferralLandingPage").then((module) => ({
+        default: module.ReferralLandingPage,
+      })),
+    type: "public",
+    title: "Invitation",
+    description:
+      "Referral landing (/ref/:code) — records the click and forwards to signup with the code prefilled (plan TECH-5)",
+  },
+  {
     path: ROUTES.FORGOT_PASSWORD,
     component: () =>
       import("@/pages/ForgotPasswordPage").then((module) => ({
@@ -151,16 +162,8 @@ export const routes: RouteConfig[] = [
     title: "Settings",
     description: "User settings page - requires token (private route)",
   },
-  {
-    path: ROUTES.LEADERBOARD,
-    component: () =>
-      import("@/pages/LeaderboardPage").then((module) => ({
-        default: module.LeaderboardPage,
-      })),
-    type: "private",
-    title: "Leaderboard",
-    description: "Leaderboard - authenticated members only (public leaderboard removed in Phase 1)",
-  },
+  // Leaderboard route removed entirely (audit SEC-02 / plan SCORE-3): the
+  // locked spec forbids any ranking surface; /qualification tiers are private.
   {
     path: ROUTES.FEEDBACK,
     component: () =>

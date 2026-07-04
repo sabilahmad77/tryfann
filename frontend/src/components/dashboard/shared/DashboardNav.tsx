@@ -46,6 +46,8 @@ const content = {
       collector: "Collector",
       gallery: "Gallery",
       ambassador: "Ambassador",
+      curator: "Curator",
+      investor: "Investor",
     },
   },
   ar: {
@@ -62,9 +64,29 @@ const content = {
       collector: "جامع",
       gallery: "معرض",
       ambassador: "سفير",
+      curator: "قيّم فني",
+      investor: "مستثمر",
     },
   },
 };
+
+// Every role the product supports — the badge must always reflect the real
+// role returned by the API (audit UX-02: Curator/Investor rendered "Artist").
+type DisplayRole =
+  | "artist"
+  | "collector"
+  | "gallery"
+  | "ambassador"
+  | "curator"
+  | "investor";
+const VALID_ROLES: DisplayRole[] = [
+  "artist",
+  "collector",
+  "gallery",
+  "ambassador",
+  "curator",
+  "investor",
+];
 
 export function DashboardNav({
   currentPage,
@@ -103,26 +125,18 @@ export function DashboardNav({
     "U"
     : "U";
 
-  // Get user role for display
+  // Get user role for display — bound to the real role from the API
+  // (audit UX-02: never default a known role to "Artist").
   const getUserRole = () => {
-    // Get role from storedUser.role first, then fallback to persona
     const displayRoleRaw =
-      storedUser?.role?.toLowerCase() || persona?.toLowerCase() || "artist";
+      storedUser?.role?.toLowerCase() || persona?.toLowerCase() || "";
 
-    // Validate and map role to our supported roles
-    const validRoles: Array<"artist" | "collector" | "gallery" | "ambassador"> = [
-      "artist",
-      "collector",
-      "gallery",
-      "ambassador",
-    ];
-    const displayRole = validRoles.includes(
-      displayRoleRaw as "artist" | "collector" | "gallery" | "ambassador"
-    )
-      ? (displayRoleRaw as "artist" | "collector" | "gallery" | "ambassador")
-      : "artist";
-
-    return t.roles[displayRole] || t.roles.artist;
+    if (VALID_ROLES.includes(displayRoleRaw as DisplayRole)) {
+      return t.roles[displayRoleRaw as DisplayRole];
+    }
+    // Unknown/missing role: show the raw value if the API sent one rather
+    // than mislabeling the user; empty string renders no badge text.
+    return storedUser?.role || persona || "";
   };
 
   // Use controlled state if provided, otherwise use internal state

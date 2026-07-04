@@ -367,50 +367,37 @@ export interface ArtworkCollectionResponse {
   data: ArtworkCollection;
 }
 
-// Dashboard Stats Gallery Types
+// Dashboard Stats Gallery Types — concierge payload carries NO points model
+// (plan UX-4); legacy tier/points fields were retired server-side (TECH-3).
 export interface DashboardStatsGalleryResponse {
   success: boolean;
   status_code: number;
   message: Record<string, unknown> | string;
   data: {
-    total_points?: number;
-    influence_points?: number;
-    provenance_points?: number;
-    fann_platform_follower?: number;
     user_followers?: number;
     user_following?: number;
-    profile_completed?: number;
     profile_complete?: boolean;
-    referral_joined?: number;
     referral_count?: number;
-    first_login?: number;
-    tier_name?: string;
-    tier_min_points?: number;
-    tier_max_points?: number;
-    tier_progress_percentage?: number;
     referral_link?: string;
     is_referral_code?: boolean;
     total_referral_clicks?: number;
+    total_clicks?: number;
     conversation?: number;
     pending?: number;
+    artwork_count?: number;
+    collection_count?: number;
     [key: string]: unknown;
   };
 }
 
-// Dashboard Stats Ambassador Types
+// Dashboard Stats Ambassador Types — only the follower ranges the user
+// declared at onboarding; fabricated engagement/post analytics were retired
+// (audit FAKE-02 / plan ROLE-2).
 export interface SocialStats {
   instagram_follower?: string | null;
-  instagram_engagement?: number;
-  instagram_post?: number;
   tiktok_follower?: string | null;
-  tiktok_engagement?: number;
-  tiktok_post?: number;
   youtube_subscriber?: string | null;
-  youtube_engagement?: number;
-  youtube_post?: number;
   twitter_follower?: string | null;
-  twitter_engagement?: number;
-  twitter_post?: number;
 }
 
 export interface DashboardStatsAmbassadorResponse {
@@ -418,66 +405,25 @@ export interface DashboardStatsAmbassadorResponse {
   status_code: number;
   message: Record<string, unknown> | string;
   data: {
-    your_rank?: number;
-    rank_out_of?: number;
-    total_reach?: number;
-    engagement_rate?: number;
     total_referral_clicks?: number;
-    total_points?: number;
     referral_link?: string;
-    influence_points?: number;
-    provenance_points?: number;
-    profile_completed?: number;
-    profile_complete?: boolean;
-    referral_joined?: number;
-    first_login?: number;
-    conversation?: number;
-    pending?: number;
-    curator_percentage?: number;
-    watched_percentage?: number;
-    total_watch_earn?: number;
-    user_completed_watch?: number;
+    is_referral_code?: boolean;
     referral_count?: number;
+    active_referral_count?: number;
+    pending?: number;
+    conversation?: number;
     artwork_count?: number;
     collection_count?: number;
-    is_referral_code?: boolean;
-    rewards_point?: number;
-    active_referral_count?: number;
-    fann_platform_follower?: number;
     user_followers?: number;
     user_following?: number;
     social_stats?: SocialStats;
+    profile_complete?: boolean;
     [key: string]: unknown;
   };
 }
 
-// User Leaderboard Response (market_final/user_leaderboard)
-export interface UserLeaderboardResponse {
-  success: boolean;
-  status_code: number;
-  message: Record<string, unknown> | string;
-  data: {
-    all_page: number;
-    total_count: number;
-    next_page: string | null;
-    prev_page: string | null;
-    success: boolean;
-    data: LeaderboardEntry[];
-    last_page: boolean;
-    your_rank: number | null;
-    total_users: number;
-    total_founding_patron: number;
-    average_points: number;
-  };
-}
-
-// Leaderboard Query Parameters
-export interface LeaderboardQueryParams {
-  filter?: "week" | "month" | "allTime";
-  page?: number;
-  page_size?: number;
-  role?: "Artist" | "Gallery" | "Collector" | "Ambassador";
-}
+// Leaderboard response/query types removed with the ranking surface
+// (audit SEC-02 / plan SCORE-3): no rank, no points race, no public list.
 
 export const dashboardApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
@@ -514,105 +460,13 @@ export const dashboardApi = baseApi.injectEndpoints({
     }),
 
     // Get Leaderboard - GET /api/market_final/leaderboard (public, before login)
-    getLeaderboard: builder.query<LeaderboardResponse, LeaderboardQueryParams | undefined>({
-      query: (params) => {
-        const queryParams = new URLSearchParams();
-        if (params?.filter && params.filter !== "allTime") {
-          // Filter is already mapped to "week" or "month" from UI
-          queryParams.append("filter", params.filter);
-        }
-        if (params?.role) {
-          queryParams.append("role", params.role);
-        }
-        if (params?.page) {
-          queryParams.append("page", params.page.toString());
-        }
-        if (params?.page_size) {
-          queryParams.append("page_size", params.page_size.toString());
-        }
-        const queryString = queryParams.toString();
-        return {
-          url: `/market_final/leaderboard${queryString ? `?${queryString}` : ""}`,
-          method: "GET",
-        };
-      },
-      providesTags: ["Leaderboard"],
-    }),
-
     // Get Redemption List - GET /api/market_final/redemption
-    getRedemptions: builder.query<RedemptionListResponse, void>({
-      query: () => ({
-        url: "/market_final/redemption",
-        method: "GET",
-      }),
-      providesTags: ["Redemption"],
-    }),
-
     // Get My Redeem List - GET /api/market_final/my_redeem_list
-    getMyRedeemList: builder.query<MyRedeemListResponse, void>({
-      query: () => ({
-        url: "/market_final/my_redeem_list",
-        method: "GET",
-      }),
-      providesTags: ["Redemption"],
-    }),
-
     // User Redemption - POST /api/market_final/user_redemption
-    userRedemption: builder.mutation<
-      UserRedemptionResponse,
-      UserRedemptionRequest
-    >({
-      query: (body) => ({
-        url: "/market_final/user_redemption",
-        method: "POST",
-        body,
-      }),
-      invalidatesTags: ["Redemption", "User"], // Only invalidate Redemption and User (for dashboard stats)
-    }),
-
     // Get WatchEarn List - GET /api/market_final/watch_earn
-    getWatchEarn: builder.query<WatchEarnListResponse, void>({
-      query: () => ({
-        url: "/market_final/watch_earn",
-        method: "GET",
-      }),
-      providesTags: ["WatchEarn"],
-    }),
-
     // Get Progression - GET /api/market_final/progression
-    getProgression: builder.query<ProgressionResponse, void>({
-      query: () => ({
-        url: "/market_final/progression",
-        method: "GET",
-      }),
-    }),
-
     // User WatchEarn - POST /api/market_final/user_watch_earn
-    userWatchEarn: builder.mutation<
-      UserWatchEarnResponse,
-      UserWatchEarnRequest
-    >({
-      query: (body) => ({
-        url: "/market_final/user_watch_earn",
-        method: "POST",
-        body,
-      }),
-      invalidatesTags: ["WatchEarn", "User"], // Only invalidate WatchEarn and User (for dashboard stats)
-    }),
-
     // Generate Redeem Code - POST /api/market_final/redeem_code_generate
-    generateRedeemCode: builder.mutation<
-      RedeemCodeGenerateResponse,
-      RedeemCodeGenerateRequest
-    >({
-      query: (body) => ({
-        url: "/market_final/redeem_code_generate",
-        method: "POST",
-        body,
-      }),
-      invalidatesTags: ["Redemption"],
-    }),
-
     // Get Dashboard Stats Gallery - GET /api/market_final/dashboard_stats_gallery
     getDashboardStatsGallery: builder.query<DashboardStatsGalleryResponse, void>({
       query: () => {
@@ -647,31 +501,6 @@ export const dashboardApi = baseApi.injectEndpoints({
     }),
 
     // Get User Leaderboard - GET /api/market_final/user_leaderboard (authenticated, after login)
-    getUserLeaderboard: builder.query<UserLeaderboardResponse, LeaderboardQueryParams | undefined>({
-      query: (params) => {
-        const queryParams = new URLSearchParams();
-        if (params?.filter && params.filter !== "allTime") {
-          // Filter is already mapped to "week" or "month" from UI
-          queryParams.append("filter", params.filter);
-        }
-        if (params?.role) {
-          queryParams.append("role", params.role);
-        }
-        if (params?.page) {
-          queryParams.append("page", params.page.toString());
-        }
-        if (params?.page_size) {
-          queryParams.append("page_size", params.page_size.toString());
-        }
-        const queryString = queryParams.toString();
-        return {
-          url: `/market_final/user_leaderboard${queryString ? `?${queryString}` : ""}`,
-          method: "GET",
-        };
-      },
-      providesTags: ["User", "Leaderboard"],
-    }),
-
     // Artist Roaster APIs
     // Get Artist Roaster List - GET /api/market_final/artist_roaster
     getArtistRoaster: builder.query<ArtistRoasterListResponse, void>({
@@ -896,18 +725,9 @@ export const {
   useValidateReferralCodeQuery,
   useLazyValidateReferralCodeQuery,
   useGetDashboardStatsQuery,
-  useGetLeaderboardQuery,
-  useGetRedemptionsQuery,
-  useGetMyRedeemListQuery,
-  useUserRedemptionMutation,
-  useGetWatchEarnQuery,
-  useUserWatchEarnMutation,
-  useGenerateRedeemCodeMutation,
-  useGetProgressionQuery,
   useGetDashboardStatsGalleryQuery,
   useGetDashboardStatsAmbassadorQuery,
   useGetUserProfileDetailsQuery,
-  useGetUserLeaderboardQuery,
   useGetArtistRoasterQuery,
   useGetArtistRoasterByIdQuery,
   useCreateArtistRoasterMutation,
