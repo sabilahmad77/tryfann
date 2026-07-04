@@ -26,9 +26,7 @@ from .views import (
     UserChangePasswordView,
     GenerateRedeemCodeAPIView,
     ProgressionViewSet,
-    LeaderBoardDetailsView,
     DashboardStatAmbassadorAPIView,
-    UserLeaderBoardDetailsView,
     UserFollowLeaderBoardView,
     DashboardStatGalleryAPIView,
     ArtistRoasterViewSet,
@@ -106,7 +104,6 @@ urlpatterns = [
         GenerateRedeemCodeAPIView.as_view(),
         name="redeem_code_generate",
     ),
-    path("leaderboard", LeaderBoardDetailsView.as_view(), name="leaderboard"),
     path(
         "my_redeem_list",
         RedemptionViewSet.as_view({"get": "my_redeem_list"}),
@@ -116,11 +113,6 @@ urlpatterns = [
         "dashboard_stats_ambassador",
         DashboardStatAmbassadorAPIView.as_view(),
         name="dashboard_stats_ambassador",
-    ),
-    path(
-        "user_leaderboard",
-        UserLeaderBoardDetailsView.as_view(),
-        name="user_leaderboard",
     ),
     path("follow_user", UserFollowLeaderBoardView.as_view(), name="follow_user"),
     path(

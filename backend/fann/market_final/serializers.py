@@ -31,7 +31,11 @@ from .models import (
     UserFeedBack,
     UserReportBug, ArtworkCollectionPoints,
 )
-from fann.users.utils import generate_random_string, send_email
+from fann.users.utils import (
+    generate_random_string,
+    send_email,
+    unique_referral_code,
+)
 from django.utils.translation import gettext_lazy as _
 import re
 from .utils import get_user_leaderboard_rank
@@ -173,6 +177,9 @@ class UserRegisterSerializer(serializers.Serializer):
                 is_verify=False,
                 profile_step=1,
                 try_market=True,
+                # Every role gets a real referral code at signup — links must
+                # never render as /ref/None (audit BRK-04 / plan TECH-5).
+                referral_code=unique_referral_code(),
             )
             user.set_password(password)
             user.save()
@@ -257,9 +264,24 @@ class UserFinalMarketSerializer(serializers.ModelSerializer):
             return request.build_absolute_uri(obj.profile_image.url)
         return None
 
+    # Fields that must never reach a browser (audit AUTH-02/SEC-03, plan
+    # TECH-4): 2FA material, privilege flags, contracts, soft-delete state.
+    # is_staff is intentionally kept: the client uses it only to decide
+    # whether to *show* the admin UI; authorization is enforced server-side.
+    CLIENT_DENYLIST = (
+        "password",
+        "fann_2fa",
+        "fann_2fa_otp",
+        "fann_2fa_otp_created",
+        "user_contract",
+        "is_deleted",
+        "is_superuser",
+    )
+
     def to_representation(self, instance):
         data = super().to_representation(instance)
-        data.pop("password", None)
+        for field in self.CLIENT_DENYLIST:
+            data.pop(field, None)
         return data
 
 

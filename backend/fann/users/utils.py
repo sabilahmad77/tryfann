@@ -1,11 +1,26 @@
 import random
 import string
+import uuid
 
 from django.core.mail import EmailMessage
 from django.template.loader import get_template
 
 from core import settings
 from fann.users.models import User, VerificationCode
+
+
+def unique_referral_code():
+    """Issue a unique referral code (audit BRK-04 / plan TECH-5).
+
+    Every user gets a real code at signup so referral links never render as
+    /ref/None. Format: TF-XXXXXXXX (uppercase hex, collision-checked).
+    """
+    for _ in range(20):
+        code = f"TF-{uuid.uuid4().hex[:8].upper()}"
+        if not User.objects.filter(referral_code=code).exists():
+            return code
+    # Practically unreachable; fall back to a longer code.
+    return f"TF-{uuid.uuid4().hex[:16].upper()}"
 
 
 def send_email(context, template_path, user_email, subject):

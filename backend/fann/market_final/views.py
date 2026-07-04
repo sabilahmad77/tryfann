@@ -6,6 +6,10 @@ from fann.qualification.antifraud import record_signup_fingerprint  # [local/try
 from .serializers import (
     UserRegisterSerializer,
     UserFinalMarketSerializer,
+    # Retained ONLY for the staff-only user list (AllTryFannUsersView);
+    # every public/user-facing leaderboard surface has been removed
+    # (audit SEC-02 / plan SCORE-3).
+    LeaderBoardDetailsSerializer,
     UserProfileSetupSerializer,
     UserIntersetSerializer,
     UserRewardSerializer,
@@ -20,11 +24,9 @@ from .serializers import (
     UserGetSettingsSerializer,
     UserChangePasswordSerializer,
     ProgressionSerializer,
-    LeaderBoardDetailsSerializer,
     UserFollowLeaderBoardSerializers,
     ArtistRoasterSerializer,
     ArtworkCollectionSerializer,
-    UserLeaderBoardDetailsSerializer,
     InstagramFollowerSerializer,
     YoutubeSubscriberSerializer,
     TwitterFollowerSerializer,
@@ -72,13 +74,12 @@ from .utils import (
     generate_referral_code,
     get_client_ip,
     generate_redeem_referral_code,
-    get_user_leaderboard_rank,
 )
 from rest_framework.views import APIView
 from django.utils import timezone
 from django.db.models import IntegerField
 from django.db.models.functions import Cast
-from django.db.models import IntegerField, Avg, Count
+from django.db.models import IntegerField, Avg, Count, Sum
 from .pagination import CustomPageNumberPagination
 
 
@@ -348,25 +349,36 @@ class ReferralClickAPIView(BaseAPIView, APIView):
 
 
 class DashboardStatAPIView(BaseAPIView, APIView):
+    """Honest dashboard stats (rebuilt per QA audit + execution plan).
+
+    Retired here (plan TECH-3 / SCORE-3 / FAKE-01 / FAKE-04):
+      - the legacy Explorer→Curator tier ladder, total_points and
+        next-tier math (the Readiness model in /qualification/* is the
+        single source of truth for progression);
+      - the hardcoded portfolio_value 35.5 / growth 12.5 placeholders —
+        portfolio value is now computed from the user's own pieces;
+      - the invented market-insight copy (incl. the off-brand "Digital
+        art" card) — insights are computed from real collection rows and
+        are empty until real data exists;
+      - watch/earn + puzzle legacy-product fields.
+    """
+
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         try:
             user = request.user
             url = request.query_params.get("url")
-            BASE_REFERRAL_URL = url + "/ref/" if url else "https://tryfann.com/ref/"
-            referral_link = f"{BASE_REFERRAL_URL}{user.referral_code}"
+            BASE_REFERRAL_URL = url + "/ref/" if url else "https://www.tryfann.com/ref/"
 
-            total_watch_earn = WatchEarn.objects.count()
-            user_completed_watch = UserWatchEarn.objects.filter(
-                user=user, is_completed=True
-            ).count()
-            if total_watch_earn > 0:
-                watched_percentage = round(
-                    (user_completed_watch / total_watch_earn) * 100, 2
-                )
-            else:
-                watched_percentage = 0
+            # Self-heal accounts created before codes were issued at signup
+            # (audit BRK-04): issue a real code on first read.
+            if not user.referral_code:
+                from fann.users.utils import unique_referral_code
+
+                user.referral_code = unique_referral_code()
+                user.save(update_fields=["referral_code"])
+            referral_link = f"{BASE_REFERRAL_URL}{user.referral_code}"
 
             referral_count = UserReferral.objects.filter(referenced_by=user).count()
             pending = UserReferral.objects.filter(
@@ -376,121 +388,65 @@ class DashboardStatAPIView(BaseAPIView, APIView):
                 referenced_by=user, referenced_to__profile_completed=True
             ).count()
 
-            # Influence Points
-            referral_points = referral_count * 100
-            influence_points = round(referral_points * 0.20, 2)
-            user_points = int(user.points or 0)
-            curator_points = (user_points - 500) / (2000 - 500) * 100
             user_followers = UserFollower.objects.filter(follow_to=user).count()
             user_following = UserFollower.objects.filter(follow_by=user).count()
 
-            tiers = [
-                ("Explorer", 0, 500),
-                ("Curator", 501, 1500),
-                ("Patron", 1501, 3500),
-                ("Ambassador", 3501, 7500),
-                ("Founding Patron", 7501, float("inf")),
-            ]
-
-            tier_name = ""
-            tier_min = 0
-            tier_max = 0
-            next_tier_need = 0
-            next_tier_name = ""
-
-            for i, (name, min_p, max_p) in enumerate(tiers):
-                if min_p <= user_points <= max_p:
-                    tier_name = name
-                    tier_min = min_p
-                    tier_max = max_p
-
-                    # Calculate next tier requirement
-                    if i < len(tiers) - 1:
-                        next_tier_name = tiers[i + 1][0]
-                        next_min_required = tiers[i + 1][1]
-                        next_tier_need = max(next_min_required - user_points, 0)
-                    break
-
-            if tier_max == float("inf"):
-                tier_progress = 100
-            else:
-                tier_progress = ((user_points - tier_min) / (tier_max - tier_min)) * 100
-                tier_progress = round(tier_progress, 2)
-
-            CATEGORY_META = {
-                "Contemporary": "Growing demand for contemporary Gulf Artist",
-                "Digital": "Digital art market expanding rapidly",
-                "Photography": "Steady interest in documentary photography",
-                "Sculpture": "Temporary dip in sculptural works",
-            }
-
-            artworks = ArtworkCollection.objects.values("category").annotate(
-                avg_price=Avg("purchase_value"), total=Count("id")
-            )
-
-            artwork_map = {
-                item["category"]: {
-                    "avg_price": round(item["avg_price"] or 0, 2),
-                    "total": item["total"],
-                }
-                for item in artworks
-            }
-
-            total_artworks = sum(item["total"] for item in artwork_map.values())
-
-            market_insight = []
-
-            for category, description in CATEGORY_META.items():
-                category_data = artwork_map.get(category, {"avg_price": 0, "total": 0})
-
-                percentage = (
-                    round((category_data["total"] / total_artworks) * 100, 2)
-                    if total_artworks
-                    else 0
-                )
-
-                market_insight.append(
-                    {
-                        "category": category,
-                        "description": description,
-                        "avg_price": category_data["avg_price"],
-                        "percentage": percentage,
-                    }
-                )
             artwork_count = ArtworkArtistCollection.objects.filter(user=user).count()
             collection_count = ArtworkCollection.objects.filter(user=user).count()
 
+            # Honest portfolio value: sum of the user's own listed/collected
+            # pieces. Zero pieces -> zero value; no growth% is reported until
+            # there is real history to compute one from.
+            collected_value = (
+                ArtworkCollection.objects.filter(user=user).aggregate(
+                    v=Sum("purchase_value")
+                )["v"]
+                or 0
+            )
+            listed_value = (
+                ArtworkArtistCollection.objects.filter(user=user).aggregate(
+                    v=Sum("price")
+                )["v"]
+                or 0
+            )
+            portfolio_value = round(float(collected_value) + float(listed_value), 2)
+
+            # Market insight from real member-collection data only. Physical
+            # art only — no "Digital" framing (audit FAKE-04). Empty until
+            # real rows exist; the UI shows an empty state instead.
+            insight_rows = (
+                ArtworkCollection.objects.exclude(category__isnull=True)
+                .exclude(category__iexact="digital")
+                .values("category")
+                .annotate(avg_price=Avg("purchase_value"), total=Count("id"))
+                .order_by("-total")
+            )
+            total_artworks = sum(row["total"] for row in insight_rows)
+            market_insight = [
+                {
+                    "category": row["category"],
+                    "description": (
+                        f"{row['total']} verified piece(s) in member collections"
+                    ),
+                    "avg_price": round(float(row["avg_price"] or 0), 2),
+                    "percentage": round(row["total"] / total_artworks * 100, 2),
+                }
+                for row in insight_rows
+            ] if total_artworks else []
+
             data = {
                 "total_referral_clicks": user.total_referral_clicks,
-                "total_points": int(user.points or 0),
                 "referral_link": referral_link,
-                "influence_points": int(influence_points),
-                "provenance_points": 0,
-                "profile_completed": 50,
-                "referral_joined": 100,
-                "first_login": 25,
+                "is_referral_code": bool(user.referral_code),
+                "referral_count": referral_count,
                 "total_clicks": referral_count,
                 "conversation": conversion,
                 "pending": pending,
-                "curator_percentage": curator_points,
-                "watched_percentage": watched_percentage,
-                "total_watch_earn": total_watch_earn,
-                "user_completed_watch": user_completed_watch,
-                "referral_count": referral_count,
                 "artwork_count": artwork_count,
                 "collection_count": collection_count,
-                "is_referral_code": True if user.referral_code else False,
                 "user_followers": user_followers,
                 "user_following": user_following,
-                "portfolio_value": 35.5,
-                "growth": 12.5,
-                "tier_name": tier_name,
-                "tier_progress_percentage": tier_progress,
-                "next_tier_need_points": next_tier_need,
-                "next_tier_name": next_tier_name,
-                "puzzle_completed": PuzzleCompletion.objects.filter(
-                    user=request.user
-                ).exists(),
+                "portfolio_value": portfolio_value,
                 "profile_complete": user.profile_completed,
                 "market_insight": market_insight,
             }
@@ -748,76 +704,42 @@ class ProgressionViewSet(BaseAPIView, viewsets.ModelViewSet):
         return [IsSuperAdmin()]
 
 
-class LeaderBoardDetailsView(BaseAPIView, ListAPIView):
-    permission_classes = []
-    queryset = None
-    serializer_class = LeaderBoardDetailsSerializer
-    pagination_class = CustomPageNumberPagination
+# Public leaderboard removed (audit SEC-02 / plan SCORE-3): the locked spec
+# forbids any public ranking. The Readiness model in /qualification/* is the
+# only progression surface.
 
-    def get_queryset(self):
-        roles = ["Artist", "Gallery", "Collector", "Ambassador", "Investor"]
-
-        filter_role = self.request.query_params.get("role")
-        if filter_role in roles:
-            roles = [filter_role]
-
-        qs = User.objects.filter(role__in=roles).annotate(
-            points_int=Cast("points", IntegerField())
-        )
-
-        filter_by = self.request.query_params.get("filter")
-
-        now = timezone.now()
-
-        if filter_by == "month":
-            qs = qs.filter(created_at__year=now.year, created_at__month=now.month)
-
-        elif filter_by == "week":
-            qs = qs.filter(
-                created_at__week=now.isocalendar().week, created_at__year=now.year
-            )
-
-        return qs.order_by("-points_int")
-
-    def list(self, request, *args, **kwargs):
-        try:
-            queryset = self.get_queryset()
-            for index, user in enumerate(queryset, start=1):
-                user.rank = index
-            page = self.paginate_queryset(queryset)
-            serializer = self.get_serializer(
-                page, many=True, context={"request": request}
-            )
-            return self.get_paginated_response(serializer.data)
-        except Exception as e:
-            return self.send_bad_request_response(message=str(e))
 
 
 class DashboardStatAmbassadorAPIView(BaseAPIView, APIView):
+    """Ambassador console on real, earned data only (plan ROLE-2).
+
+    Removed (audit FAKE-02 / SEC-02): fabricated total_reach 124.5,
+    engagement_rate 4.8, per-network engagement/post counts, rewards 450,
+    and the public your_rank / rank_out_of ranking. Social numbers are
+    limited to the follower ranges the user themself declared during
+    onboarding; per-network analytics return only when a real integration
+    provides them.
+    """
+
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         try:
             user = request.user
             url = request.query_params.get("url")
-            BASE_REFERRAL_URL = url + "/ref/" if url else "https://tryfann.com/ref/"
-            referral_link = f"{BASE_REFERRAL_URL}{user.referral_code}"
+            BASE_REFERRAL_URL = url + "/ref/" if url else "https://www.tryfann.com/ref/"
 
-            total_watch_earn = WatchEarn.objects.count()
-            user_completed_watch = UserWatchEarn.objects.filter(
-                user=user, is_completed=True
-            ).count()
-            if total_watch_earn > 0:
-                watched_percentage = round(
-                    (user_completed_watch / total_watch_earn) * 100, 2
-                )
-            else:
-                watched_percentage = 0
+            # Self-heal missing referral codes (audit BRK-04).
+            if not user.referral_code:
+                from fann.users.utils import unique_referral_code
+
+                user.referral_code = unique_referral_code()
+                user.save(update_fields=["referral_code"])
+            referral_link = f"{BASE_REFERRAL_URL}{user.referral_code}"
 
             referral_active_count = UserReferral.objects.filter(
                 referenced_by=user, referenced_to__is_active=True
             ).count()
-
             referral_count = UserReferral.objects.filter(referenced_by=user).count()
             pending = UserReferral.objects.filter(
                 referenced_by=user, referenced_to__profile_completed=False
@@ -832,177 +754,34 @@ class DashboardStatAmbassadorAPIView(BaseAPIView, APIView):
             artwork_count = ArtworkArtistCollection.objects.filter(user=user).count()
             collection_count = ArtworkCollection.objects.filter(user=user).count()
 
-            # Influence Points
-            referral_points = referral_count * 100
-            influence_points = round(referral_points * 0.20, 2)
-            user_points = int(user.points or "0")
-            curator_points = (user_points - 500) / (2000 - 500) * 100
-            # leaderboard rank
-            leaderboard_data = get_user_leaderboard_rank(user)
-            your_rank = leaderboard_data["rank"]
-            out_of = leaderboard_data["out_of"]
-
-            tiers = [
-                ("Explorer", 0, 500),
-                ("Curator", 501, 1500),
-                ("Patron", 1501, 3500),
-                ("Ambassador", 3501, 7500),
-                ("Founding Patron", 7501, float("inf")),
-            ]
-
-            tier_name = ""
-            tier_min = 0
-            tier_max = 0
-            next_tier_need = 0
-            next_tier_name = ""
-
-            for i, (name, min_p, max_p) in enumerate(tiers):
-                if min_p <= user_points <= max_p:
-                    tier_name = name
-                    tier_min = min_p
-                    tier_max = max_p
-
-                    if i < len(tiers) - 1:
-                        next_tier_name = tiers[i + 1][0]
-                        next_min_required = tiers[i + 1][1]
-                        next_tier_need = max(next_min_required - user_points, 0)
-                    break
-
-            if tier_max == float("inf"):
-                tier_progress = 100
-            else:
-                tier_progress = ((user_points - tier_min) / (tier_max - tier_min)) * 100
-                tier_progress = round(tier_progress, 2)
-
+            # Only the user's own declared follower ranges — no invented
+            # engagement rates or post counts.
             social_data = {
                 "instagram_follower": getattr(user.instagram_follower, "range", None),
-                "instagram_engagement": 4.2,
-                "instagram_post": 124,
                 "tiktok_follower": getattr(user.tiktok_follower, "range", None),
-                "tiktok_engagement": 6.8,
-                "tiktok_post": 89,
                 "youtube_subscriber": getattr(user.youtube_subscribers, "range", None),
-                "youtube_engagement": 3.1,
-                "youtube_post": 34,
                 "twitter_follower": getattr(user.twitter_follower, "range", None),
-                "twitter_engagement": 2.4,
-                "twitter_post": 312,
             }
+
             data = {
-                "your_rank": your_rank,
-                "rank_out_of": out_of,
-                "total_reach": 124.5,
-                "engagement_rate": 4.8,
                 "total_referral_clicks": user.total_referral_clicks,
-                "total_points": int(user.points or 0),
                 "referral_link": referral_link,
-                "influence_points": int(influence_points),
-                "provenance_points": 0,
-                "profile_completed": 50,
-                "referral_joined": 100,
-                "first_login": 25,
-                "curator_percentage": curator_points,
-                "watched_percentage": watched_percentage,
-                "total_watch_earn": total_watch_earn,
-                "user_completed_watch": user_completed_watch,
+                "is_referral_code": bool(user.referral_code),
                 "referral_count": referral_count,
+                "active_referral_count": referral_active_count,
+                "pending": pending,
+                "conversation": conversion,
                 "artwork_count": artwork_count,
                 "collection_count": collection_count,
-                "is_referral_code": True if user.referral_code else False,
-                "rewards_point": 450,
-                "active_referral_count": referral_active_count,
                 "user_followers": user_followers,
                 "user_following": user_following,
                 "social_stats": social_data,
-                "puzzle_completed": PuzzleCompletion.objects.filter(
-                    user=request.user
-                ).exists(),
-                "conversation": conversion,
-                "pending": pending,
-                "tier_name": tier_name,
-                "tier_progress_percentage": tier_progress,
-                "next_tier_need_points": next_tier_need,
-                "next_tier_name": next_tier_name,
                 "profile_complete": user.profile_completed,
             }
             return self.send_success_response(data=data)
         except Exception as e:
             return self.send_bad_request_response(message=str(e))
 
-
-class UserLeaderBoardDetailsView(BaseAPIView, ListAPIView):
-    permission_classes = [IsAuthenticated]
-    queryset = None
-    serializer_class = UserLeaderBoardDetailsSerializer
-    pagination_class = CustomPageNumberPagination
-
-    def get_queryset(self):
-        roles = ["Artist", "Gallery", "Collector", "Ambassador"]
-
-        filter_role = self.request.query_params.get("role")
-        if filter_role in roles:
-            roles = [filter_role]
-
-        qs = User.objects.filter(role__in=roles).annotate(
-            points_int=Cast("points", IntegerField())
-        )
-
-        # Optional filter by week/month
-        filter_by = self.request.query_params.get("filter")  # values: month, week, all
-        now = timezone.now()
-
-        if filter_by == "month":
-            qs = qs.filter(created_at__year=now.year, created_at__month=now.month)
-        elif filter_by == "week":
-            qs = qs.filter(
-                created_at__week=now.isocalendar().week, created_at__year=now.year
-            )
-
-        return qs.order_by("-points_int")
-
-    def list(self, request, *args, **kwargs):
-        try:
-            queryset = self.get_queryset()
-            total_users = queryset.count()
-            total_founding_patron = queryset.filter(points_int__gt=5000).count()
-            avg_points = queryset.aggregate(avg=Avg("points_int"))["avg"] or 0
-            avg_points = round(avg_points, 2)
-
-            ranked_users = []
-            your_rank = None
-
-            for index, user in enumerate(queryset, start=1):
-                user.rank = index
-                ranked_users.append(user)
-
-                if request.user.is_authenticated and request.user.id == user.id:
-                    your_rank = index
-
-            page = self.paginate_queryset(ranked_users)
-            if page is not None:
-                serializer = self.get_serializer(
-                    page, many=True, context={"request": request}
-                )
-                paginated_data = self.get_paginated_response(serializer.data).data
-            else:
-                serializer = self.get_serializer(
-                    ranked_users, many=True, context={"request": request}
-                )
-                paginated_data = {"results": serializer.data}
-
-            paginated_data.update(
-                {
-                    "your_rank": your_rank,
-                    "total_users": total_users,
-                    "total_founding_patron": total_founding_patron,
-                    "average_points": avg_points,
-                }
-            )
-
-            return self.send_success_response(data=paginated_data)
-
-        except Exception as e:
-            return self.send_bad_request_response(message=str(e))
 
 
 class UserFollowLeaderBoardView(BaseAPIView, APIView):
