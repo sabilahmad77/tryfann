@@ -15,6 +15,7 @@ from fann.qualification.admin_api import (
 from fann.qualification.views import (
     AnalyticsEventView,
     CompleteTaskView,
+    ConciergeRequestView,
     MeView,
     MyTasksView,
     RoleProfileView,
@@ -29,6 +30,11 @@ urlpatterns = [
         name="qualification-complete-task",
     ),
     path("role-profile", RoleProfileView.as_view(), name="qualification-role-profile"),
+    path(
+        "concierge/requests",
+        ConciergeRequestView.as_view(),
+        name="qualification-concierge-requests",
+    ),
     path(
         "analytics/events",
         AnalyticsEventView.as_view(),

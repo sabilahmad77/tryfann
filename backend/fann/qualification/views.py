@@ -167,3 +167,77 @@ class CompleteTaskView(BaseAPIView):
                 "me": me_payload(request.user),
             }
         )
+
+
+class ConciergeRequestView(BaseAPIView):
+    """Concierge advisor requests (plan ROLE-3, audit 'silent buttons').
+
+    POST records a call/email request, best-effort notifies the concierge
+    inbox, and returns the open-request state so the dashboard can show a
+    real status instead of a fire-and-forget mailto.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        from fann.qualification.models import ConciergeRequest
+
+        latest = (
+            ConciergeRequest.objects.filter(user=request.user)
+            .values("kind", "status", "created_at")
+            .first()
+        )
+        return self.send_success_response(data={"latest": latest})
+
+    def post(self, request):
+        import logging
+
+        from fann.qualification.models import ConciergeRequest
+
+        kind = (request.data or {}).get("kind", ConciergeRequest.CALL)
+        if kind not in (ConciergeRequest.CALL, ConciergeRequest.EMAIL):
+            kind = ConciergeRequest.CALL
+        message = str((request.data or {}).get("message", ""))[:500]
+
+        # One OPEN call request at a time — repeat clicks don't spam staff.
+        existing = ConciergeRequest.objects.filter(
+            user=request.user, kind=kind, status=ConciergeRequest.NEW
+        ).first()
+        if existing:
+            req = existing
+            created = False
+        else:
+            req = ConciergeRequest.objects.create(
+                user=request.user, kind=kind, message=message
+            )
+            created = True
+
+        if created:
+            # Best-effort advisor notification; never block the request on mail.
+            try:
+                from django.core.mail import send_mail
+
+                send_mail(
+                    subject=f"Concierge {kind} request — {request.user.email}",
+                    message=(
+                        f"User: {request.user.email} ({request.user.role})\n"
+                        f"Kind: {kind}\nMessage: {message or '—'}\n"
+                        "Handle it from the staff admin (Concierge requests)."
+                    ),
+                    from_email=None,
+                    recipient_list=["concierge@tryfann.com"],
+                    fail_silently=True,
+                )
+            except Exception:  # noqa: BLE001
+                logging.getLogger(__name__).warning(
+                    "concierge notify failed", exc_info=True
+                )
+
+        return self.send_success_response(
+            data={
+                "kind": req.kind,
+                "status": req.status,
+                "created": created,
+                "created_at": req.created_at.isoformat(),
+            }
+        )

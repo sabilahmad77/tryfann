@@ -292,3 +292,37 @@ class UserTask(TimestampMixin):
 
     def __str__(self):
         return f"UserTask<{self.user_id} {self.task_id} {self.status}>"
+
+
+class ConciergeRequest(TimestampMixin):
+    """A concierge-track user's request to their advisor (plan ROLE-3).
+
+    'Request a call' / 'Email your advisor' must actually send and be
+    trackable by staff — never a silent button. Staff work the queue from
+    the Django admin; the dashboard reflects the latest request's status.
+    """
+
+    CALL = "call"
+    EMAIL = "email"
+    KIND_CHOICES = [(CALL, "Call request"), (EMAIL, "Email intent")]
+
+    NEW = "new"
+    HANDLED = "handled"
+    STATUS_CHOICES = [(NEW, "New"), (HANDLED, "Handled")]
+
+    user = models.ForeignKey(
+        USER, on_delete=models.CASCADE, related_name="concierge_requests"
+    )
+    kind = models.CharField(max_length=16, choices=KIND_CHOICES, default=CALL)
+    message = models.CharField(max_length=500, blank=True)
+    status = models.CharField(max_length=16, choices=STATUS_CHOICES, default=NEW)
+    handled_by = models.ForeignKey(
+        USER, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+    handled_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"ConciergeRequest<{self.user_id} {self.kind} {self.status}>"

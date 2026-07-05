@@ -124,12 +124,11 @@ class UserLoginView(BaseAPIView, generics.GenericAPIView):
 
             user = serializer.validated_data["user"]
 
-            if user.last_login is None:
-                current_points = int(user.points or "0")
-                user.points = str(current_points + 25)
-
+            # Legacy "+25 first-login points" award removed (plan SCORE-1):
+            # the Readiness model in /qualification/* is the only scoring
+            # system; no silent legacy points accrue anywhere.
             user.last_login = timezone.now()
-            user.save(update_fields=["points", "last_login"])
+            user.save(update_fields=["last_login"])
 
             refresh = RefreshToken.for_user(user)
             user_data = UserFinalMarketSerializer(
@@ -807,21 +806,28 @@ class UserFollowLeaderBoardView(BaseAPIView, APIView):
             return self.send_bad_request_response(message=str(e))
 
 class DashboardStatGalleryAPIView(BaseAPIView, APIView):
+    """Concierge stats (Gallery/Investor) — no points model, ever.
+
+    Plan UX-4: concierge roles must not receive the legacy points/tier
+    payload even in data. Serves only real concierge-relevant fields.
+    """
+
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         try:
             user = request.user
-            referral_count = UserReferral.objects.filter(referenced_by=user).count()
-            user_followers = UserFollower.objects.filter(follow_to=user).count()
-            user_following = UserFollower.objects.filter(follow_by=user).count()
-            referral_points = referral_count * 100
-            influence_points = round(referral_points * 0.20, 2)
-
             url = request.query_params.get("url")
-            BASE_REFERRAL_URL = url + "/ref/" if url else "https://tryfann.com/ref/"
+            BASE_REFERRAL_URL = url + "/ref/" if url else "https://www.tryfann.com/ref/"
+
+            if not user.referral_code:
+                from fann.users.utils import unique_referral_code
+
+                user.referral_code = unique_referral_code()
+                user.save(update_fields=["referral_code"])
             referral_link = f"{BASE_REFERRAL_URL}{user.referral_code}"
 
+            referral_count = UserReferral.objects.filter(referenced_by=user).count()
             pending = UserReferral.objects.filter(
                 referenced_by=user, referenced_to__profile_completed=False
             ).count()
@@ -829,71 +835,24 @@ class DashboardStatGalleryAPIView(BaseAPIView, APIView):
                 referenced_by=user, referenced_to__profile_completed=True
             ).count()
 
+            user_followers = UserFollower.objects.filter(follow_to=user).count()
+            user_following = UserFollower.objects.filter(follow_by=user).count()
             artwork_count = ArtworkArtistCollection.objects.filter(user=user).count()
             collection_count = ArtworkCollection.objects.filter(user=user).count()
 
-            user_points = int(user.points or 0)
-
-            # Define tiers
-            tiers = [
-                ("Explorer", 0, 500),
-                ("Curator", 501, 1500),
-                ("Patron", 1501, 3500),
-                ("Ambassador", 3501, 7500),
-                ("Founding Patron", 7501, float("inf")),
-            ]
-
-            tier_name = ""
-            tier_min = 0
-            tier_max = 0
-            next_tier_need = 0
-            next_tier_name = ""
-
-            for i, (name, min_p, max_p) in enumerate(tiers):
-                if min_p <= user_points <= max_p:
-                    tier_name = name
-                    tier_min = min_p
-                    tier_max = max_p
-
-                    # Calculate next tier requirement
-                    if i < len(tiers) - 1:
-                        next_tier_name = tiers[i + 1][0]
-                        next_min_required = tiers[i + 1][1]
-                        next_tier_need = max(next_min_required - user_points, 0)
-                    break
-
-            if tier_max == float("inf"):
-                tier_progress = 100
-            else:
-                tier_progress = ((user_points - tier_min) / (tier_max - tier_min)) * 100
-                tier_progress = round(tier_progress, 2)
-
             data = {
-                "total_points": user_points,
                 "referral_link": referral_link,
-                "influence_points": int(influence_points),
-                "provenance_points": 0,
-                "user_followers": user_followers,
-                "user_following": user_following,
-                "profile_completed": 50,
-                "referral_joined": 100,
-                "first_login": 25,
-                "tier_name": tier_name,
-                "tier_progress_percentage": tier_progress,
-                "next_tier_need_points": next_tier_need,
-                "next_tier_name": next_tier_name,
-                "puzzle_completed": PuzzleCompletion.objects.filter(
-                    user=request.user
-                ).exists(),
+                "is_referral_code": bool(user.referral_code),
+                "total_referral_clicks": user.total_referral_clicks,
+                "referral_count": referral_count,
                 "total_clicks": referral_count,
                 "conversation": conversion,
                 "pending": pending,
-                "referral_count": referral_count,
-                "profile_complete": user.profile_completed,
-                "is_referral_code": True if user.referral_code else False,
-                "total_referral_clicks": user.total_referral_clicks,
+                "user_followers": user_followers,
+                "user_following": user_following,
                 "artwork_count": artwork_count,
                 "collection_count": collection_count,
+                "profile_complete": user.profile_completed,
             }
 
             return self.send_success_response(data=data)

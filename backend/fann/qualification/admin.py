@@ -89,3 +89,13 @@ class UserTaskAdmin(admin.ModelAdmin):
             services.reject_user_task(ut, reviewer=request.user)
             n += 1
         self.message_user(request, f"Rejected {n} task completion(s).")
+
+
+from .models import ConciergeRequest  # noqa: E402  (plan ROLE-3 staff queue)
+
+
+@admin.register(ConciergeRequest)
+class ConciergeRequestAdmin(admin.ModelAdmin):
+    list_display = ("user", "kind", "status", "message", "created_at", "handled_by")
+    list_filter = ("kind", "status")
+    search_fields = ("user__email",)
