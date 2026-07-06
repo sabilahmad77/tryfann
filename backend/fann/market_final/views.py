@@ -402,13 +402,21 @@ class DashboardStatAPIView(BaseAPIView, APIView):
                 )["v"]
                 or 0
             )
-            listed_value = (
-                ArtworkArtistCollection.objects.filter(user=user).aggregate(
-                    v=Sum("price")
-                )["v"]
-                or 0
+            # `price` is a legacy CharField: SQLite SUMs strings but Postgres
+            # refuses, so parse defensively in Python (bad values count as 0).
+            def _num(v):
+                try:
+                    return float(v)
+                except (TypeError, ValueError):
+                    return 0.0
+
+            listed_value = sum(
+                _num(v)
+                for v in ArtworkArtistCollection.objects.filter(
+                    user=user
+                ).values_list("price", flat=True)
             )
-            portfolio_value = round(float(collected_value) + float(listed_value), 2)
+            portfolio_value = round(float(collected_value) + listed_value, 2)
 
             # Market insight from real member-collection data only. Physical
             # art only — no "Digital" framing (audit FAKE-04). Empty until
