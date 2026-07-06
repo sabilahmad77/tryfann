@@ -84,3 +84,8 @@ REST_FRAMEWORK = {
         "refer": "60/hour",
     },
 }
+
+# Google Sign-In (verify ID tokens server-side). Set the same Web Client ID
+# the frontend uses; empty disables the endpoint gracefully.
+import os as _os  # noqa: E402
+GOOGLE_OAUTH_CLIENT_ID = _os.environ.get("GOOGLE_OAUTH_CLIENT_ID", "931583651800-6u5490dlihpoc3k44i45tdau2tiooj0a.apps.googleusercontent.com")

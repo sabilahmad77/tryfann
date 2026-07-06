@@ -1,4 +1,8 @@
 import { useSignUpMutation } from "@/services/api/authApi";
+import {
+  GoogleAuthButton,
+  GOOGLE_CLIENT_ID,
+} from "@/components/auth/GoogleAuthButton";
 import { useTrackEventMutation } from "@/services/api/qualificationApi";
 import { useGetRegionsQuery } from "@/services/api/regionApi";
 import { getSessionId } from "@/utils/analytics";
@@ -1376,6 +1380,27 @@ export function SignUp({
                           </span>
                         </button>
                       </div>
+
+                      {/* Continue with Google — carries the role picked in
+                          step 1 so the new account is created with it. */}
+                      {GOOGLE_CLIENT_ID && (
+                        <div className="mt-6">
+                          <div className="mb-4 flex items-center gap-3">
+                            <div className="h-px flex-1 bg-[#F2F2F3]/10" />
+                            <span className="text-xs text-[#F2F2F3]/40">
+                              {language === "en" ? "or" : "أو"}
+                            </span>
+                            <div className="h-px flex-1 bg-[#F2F2F3]/10" />
+                          </div>
+                          <GoogleAuthButton
+                            role={
+                              selectedPersona
+                                ? getRoleFromPersona(selectedPersona)
+                                : undefined
+                            }
+                          />
+                        </div>
+                      )}
                     </form>
                   </motion.div>
                 )}

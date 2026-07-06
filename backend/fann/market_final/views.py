@@ -141,6 +141,106 @@ class UserLoginView(BaseAPIView, generics.GenericAPIView):
             return self.send_bad_request_response(message=str(e))
 
 
+class GoogleLoginView(BaseAPIView, APIView):
+    """Sign in / sign up with Google (verified server-side).
+
+    The frontend obtains a Google ID token via Google Identity Services and
+    POSTs it here as `credential`. We verify the token's signature + audience
+    against Google (never trust the client), then match or create a user by
+    their Google-verified email and issue our normal JWT pair — identical to
+    the password login response so the frontend handles both the same way.
+
+    An optional `role` (from the sign-up role picker) is applied to brand-new
+    accounts; existing users keep their role. New accounts are email-verified
+    (Google already verified it) and get a referral code like any signup.
+    """
+
+    permission_classes = []
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "register"  # reuse the anti-abuse signup bucket
+
+    def post(self, request, *args, **kwargs):
+        try:
+            from django.conf import settings as dj_settings
+            from fann.users.utils import unique_referral_code
+
+            credential = (request.data or {}).get("credential")
+            if not credential:
+                return self.send_bad_request_response(
+                    message="Missing Google credential."
+                )
+            client_id = getattr(dj_settings, "GOOGLE_OAUTH_CLIENT_ID", "")
+            if not client_id:
+                return self.send_bad_request_response(
+                    message="Google login is not configured."
+                )
+
+            # Verify signature, expiry and audience against Google.
+            try:
+                from google.auth.transport import requests as g_requests
+                from google.oauth2 import id_token as g_id_token
+
+                info = g_id_token.verify_oauth2_token(
+                    credential, g_requests.Request(), client_id
+                )
+            except Exception:  # noqa: BLE001 — any failure = untrusted token
+                return self.send_bad_request_response(
+                    message="Could not verify Google sign-in. Please try again."
+                )
+
+            if info.get("iss") not in (
+                "accounts.google.com",
+                "https://accounts.google.com",
+            ):
+                return self.send_bad_request_response(message="Invalid token issuer.")
+            email = (info.get("email") or "").strip().lower()
+            if not email or not info.get("email_verified", False):
+                return self.send_bad_request_response(
+                    message="Your Google email is not verified."
+                )
+
+            requested_role = (request.data or {}).get("role") or ""
+            user = User.objects.filter(email__iexact=email).first()
+            new_user = user is None
+            if new_user:
+                user = User.objects.create(
+                    email=email,
+                    first_name=info.get("given_name", "") or "",
+                    last_name=info.get("family_name", "") or "",
+                    role=requested_role,
+                    points="0",
+                    is_verify=True,  # Google already verified the address
+                    profile_step=1,
+                    try_market=True,
+                    referral_code=unique_referral_code(),
+                )
+                user.set_unusable_password()  # login is via Google only
+                user.save()
+                record_signup_fingerprint(user, request)
+            else:
+                # Backfill a referral code for pre-existing accounts (BRK-04).
+                if not user.referral_code:
+                    user.referral_code = unique_referral_code()
+                    user.save(update_fields=["referral_code"])
+
+            user.last_login = timezone.now()
+            user.save(update_fields=["last_login"])
+
+            refresh = RefreshToken.for_user(user)
+            user_data = UserFinalMarketSerializer(
+                user, context={"request": request}
+            ).data
+            user_data["refresh"] = str(refresh)
+            user_data["access"] = str(refresh.access_token)
+            # Frontend routes new users (esp. without a role yet) into role
+            # selection / onboarding; existing users go straight to dashboard.
+            user_data["new_user"] = new_user
+            user_data["needs_role"] = not (user.role or "")
+            return self.send_success_response(data=user_data)
+        except Exception as e:
+            return self.send_bad_request_response(message=str(e))
+
+
 class RoleApplicationView(BaseAPIView, APIView):
     """TryFann Point 2: persist a role's schema-driven application answers.
 
@@ -187,6 +287,18 @@ class RoleApplicationView(BaseAPIView, APIView):
             if completed is not None:
                 user.profile_completed = bool(completed)
                 update_fields.append("profile_completed")
+
+            # Allow setting the role here so a Google-signup user who arrived
+            # without one (no password-register step) can pick it during
+            # onboarding. Only accept a valid role and only when currently unset
+            # or explicitly changing during onboarding.
+            ALLOWED_ROLES = {
+                "Artist", "Gallery", "Collector", "Curator", "Ambassador", "Investor",
+            }
+            new_role = payload.get("role")
+            if new_role in ALLOWED_ROLES:
+                user.role = new_role
+                update_fields.append("role")
 
             user.save(update_fields=update_fields)
             data = UserFinalMarketSerializer(

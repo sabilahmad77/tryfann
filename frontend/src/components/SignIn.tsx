@@ -1,6 +1,10 @@
 import { ROUTES } from "@/routes/paths";
 import { useLoginMutation } from "@/services/api/authApi";
 import {
+  GoogleAuthButton,
+  GOOGLE_CLIENT_ID,
+} from "@/components/auth/GoogleAuthButton";
+import {
   setAccessToken,
   setPersona,
   setTokens,
@@ -621,6 +625,20 @@ export function SignIn({
                     </button>
                   </div>
                 </div>
+
+                {/* Continue with Google (renders only when configured) */}
+                {GOOGLE_CLIENT_ID && (
+                  <div className="mt-6">
+                    <div className="mb-4 flex items-center gap-3">
+                      <div className="h-px flex-1 bg-[#F2F2F3]/10" />
+                      <span className="text-xs text-[#F2F2F3]/40">
+                        {language === "en" ? "or" : "أو"}
+                      </span>
+                      <div className="h-px flex-1 bg-[#F2F2F3]/10" />
+                    </div>
+                    <GoogleAuthButton />
+                  </div>
+                )}
 
                 {/* Sign Up Link */}
                 <div className="mt-6 text-center">

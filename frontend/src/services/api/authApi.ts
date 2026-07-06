@@ -23,6 +23,20 @@ export const authApi = baseApi.injectEndpoints({
       invalidatesTags: ["Auth", "User"],
     }),
 
+    // Google Sign-In: POST the Google ID token; backend verifies it and
+    // returns the same envelope as user_login (+ new_user / needs_role flags).
+    googleLogin: builder.mutation<
+      LoginResponse,
+      { credential: string; role?: string }
+    >({
+      query: (body) => ({
+        url: "/market_final/google_login",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Auth", "User"],
+    }),
+
     // Verify email - consumes the token from the signup email link.
     // POST /api/market_final/verify_email  { email, token }
     verifyEmail: builder.mutation<
@@ -91,6 +105,7 @@ export const authApi = baseApi.injectEndpoints({
 export const {
   useLoginMutation,
   useSignUpMutation,
+  useGoogleLoginMutation,
   useVerifyEmailMutation,
   useGetUserDetailsQuery,
   useRefreshTokenMutation,

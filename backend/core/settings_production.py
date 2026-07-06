@@ -86,6 +86,10 @@ CSRF_TRUSTED_ORIGINS = _env_list(
 # Verification/email links point at the real frontend.
 FRONTEND_BASE_URL = _env("FRONTEND_BASE_URL", "https://www.tryfann.com")
 
+# Google Sign-In: the Web OAuth Client ID whose ID tokens the backend accepts
+# (must match the frontend's VITE_GOOGLE_CLIENT_ID). Empty -> endpoint 400s.
+GOOGLE_OAUTH_CLIENT_ID = _env("GOOGLE_OAUTH_CLIENT_ID", "931583651800-6u5490dlihpoc3k44i45tdau2tiooj0a.apps.googleusercontent.com")
+
 # --- Email ---
 # Never let a slow mail server block the request thread (Render free tier blocks
 # outbound SMTP ports, which made SMTP sends hang the register endpoint).
