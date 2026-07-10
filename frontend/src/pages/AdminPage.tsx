@@ -719,8 +719,10 @@ export function AdminPage() {
   const storedUser = useSelector((s: RootState) => s.auth.user);
   const [tab, setTab] = useState<Tab>("Overview");
 
-  // Staff guard — non-staff users are bounced to their dashboard.
-  if (!storedUser?.is_staff) {
+  // Admin guard — non-admins are bounced to their dashboard. The server sends
+  // an intentional `is_admin` hint (SEC-03); the raw is_staff/is_superuser
+  // Django flags are never shipped. Real authorization is enforced server-side.
+  if (!storedUser?.is_admin) {
     return <Navigate to={ROUTES.DASHBOARD} replace />;
   }
 

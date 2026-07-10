@@ -4,10 +4,11 @@ export interface UserProfileData {
   id: number;
   profile_image: string | null;
   last_login: string | null;
-  is_superuser: boolean;
+  // SEC-03: the server ships an intentional `is_admin` hint for the CRM-UI
+  // gate; the raw Django is_staff/is_superuser flags are no longer sent.
+  is_admin?: boolean;
   first_name: string;
   last_name: string;
-  is_staff: boolean;
   is_active: boolean;
   date_joined: string;
   is_verify: boolean;

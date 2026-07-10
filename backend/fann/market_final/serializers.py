@@ -3,6 +3,7 @@ from django.db import transaction
 # (unused; pulled matplotlib+numpy into the load path for no reason)
 from rest_framework import serializers
 from django.contrib.auth import authenticate
+from fann.common.user_safety import ClientSafeUserMixin
 from fann.users.models import (
     User,
     UserVerifications,
@@ -251,8 +252,13 @@ class UserLoginSerializer(serializers.Serializer):
         return data
 
 
-class UserFinalMarketSerializer(serializers.ModelSerializer):
+class UserFinalMarketSerializer(ClientSafeUserMixin, serializers.ModelSerializer):
     profile_image = serializers.SerializerMethodField()
+    # Intentional, client-safe admin hint (audit SEC-03): the browser uses this
+    # only to decide whether to *show* the CRM UI. Real authorization is
+    # enforced server-side (IsAdminUser / IsStaffSuperuser). The raw is_staff /
+    # is_superuser Django flags are stripped and never shipped.
+    is_admin = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -264,25 +270,8 @@ class UserFinalMarketSerializer(serializers.ModelSerializer):
             return request.build_absolute_uri(obj.profile_image.url)
         return None
 
-    # Fields that must never reach a browser (audit AUTH-02/SEC-03, plan
-    # TECH-4): 2FA material, privilege flags, contracts, soft-delete state.
-    # is_staff is intentionally kept: the client uses it only to decide
-    # whether to *show* the admin UI; authorization is enforced server-side.
-    CLIENT_DENYLIST = (
-        "password",
-        "fann_2fa",
-        "fann_2fa_otp",
-        "fann_2fa_otp_created",
-        "user_contract",
-        "is_deleted",
-        "is_superuser",
-    )
-
-    def to_representation(self, instance):
-        data = super().to_representation(instance)
-        for field in self.CLIENT_DENYLIST:
-            data.pop(field, None)
-        return data
+    def get_is_admin(self, obj):
+        return bool(getattr(obj, "is_staff", False))
 
 
 class UserProfileSetupSerializer(serializers.Serializer):
@@ -1264,7 +1253,7 @@ class PriceRangeSerializer(serializers.ModelSerializer):
 #         fields = "__all__"
 
 
-class ViewUserProfileSerializer(serializers.ModelSerializer):
+class ViewUserProfileSerializer(ClientSafeUserMixin, serializers.ModelSerializer):
     artworks = serializers.SerializerMethodField()
     user_stats = serializers.SerializerMethodField()
     kyc_verification = serializers.SerializerMethodField()

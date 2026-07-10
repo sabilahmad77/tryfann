@@ -2,6 +2,7 @@ from django.db import transaction
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework.exceptions import AuthenticationFailed
+from fann.common.user_safety import ClientSafeUserMixin
 from django.utils.translation import gettext_lazy as _
 from fann.artist.models import ArtistShop, Art, Order
 from fann.artist.serializers import ArtistPortFolioSerializer, ShopListingSerializer
@@ -433,7 +434,7 @@ class EditUserProfileSerializer(serializers.ModelSerializer):
         return instance
 
 
-class UserDataSerializer(serializers.ModelSerializer):
+class UserDataSerializer(ClientSafeUserMixin, serializers.ModelSerializer):
 
     class Meta:
         model = User
