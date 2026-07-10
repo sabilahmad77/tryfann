@@ -157,7 +157,9 @@ export function AmbassadorDashboard() {
   // were retired with the legacy API (audit FAKE-02 / plan ROLE-2).
   const totalReferrals = apiData.referral_count || 0;
   const activeReferrals = apiData.active_referral_count || 0;
-  const conversions = apiData.conversation || 0; // Note: API uses "conversation" not "conversions"
+  // A5: the payload key is now correctly spelled `conversion`; fall back to the
+  // deprecated `conversation` alias for any stale cached response.
+  const conversions = apiData.conversion ?? apiData.conversation ?? 0;
 
   // Get referral link: prefer the stats payload (real code, self-healed
   // server-side), then the user record.

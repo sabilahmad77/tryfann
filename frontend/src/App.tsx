@@ -1,4 +1,6 @@
-import { BrowserRouter } from 'react-router-dom';
+import { useEffect } from 'react';
+import { BrowserRouter, useLocation } from 'react-router-dom';
+import { toast } from 'sonner';
 import { Toaster } from '@/components/ui/sonner';
 import { LanguageProvider } from '@/contexts/LanguageContext';
 import { TokenExpiredProvider } from '@/contexts/TokenExpiredContext';
@@ -9,6 +11,14 @@ import { useTokenExpired } from '@/contexts/useTokenExpired';
 // Component to render the dialog inside the providers
 function AppContent() {
   const { isDialogOpen, hideDialog } = useTokenExpired();
+  const { pathname } = useLocation();
+
+  // A5: dismiss any lingering toast (e.g. a failed-quiz "N/M correct" message)
+  // when the route changes, so a stale toast can't follow the user to the next
+  // page. sonner toasts are global and otherwise persist across navigation.
+  useEffect(() => {
+    toast.dismiss();
+  }, [pathname]);
 
   return (
     <>

@@ -26,7 +26,8 @@ interface URLEncoderProps {
     referral_link?: string;
     is_referral_code?: boolean;
     total_referral_clicks?: number;
-    conversation?: number;
+    conversion?: number;
+    conversation?: number; // deprecated alias (A5)
     pending?: number;
     [key: string]: unknown;
   };

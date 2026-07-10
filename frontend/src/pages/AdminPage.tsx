@@ -378,9 +378,11 @@ function ReviewsTab() {
 }
 
 function KycTab() {
-  const { data, isLoading } = useGetAdminPendingKycQuery();
+  const { data, isLoading, isError } = useGetAdminPendingKycQuery();
   const [review, { isLoading: reviewing }] = useReviewKycMutation();
-  const pending = data?.data.pending ?? [];
+  // Defensive: the queue is an explicit empty state at zero-pending, never a
+  // stuck "Loading…" (audit A5). Guards a null/malformed `data.data` too.
+  const pending = data?.data?.pending ?? [];
 
   const decide = async (kycId: number, decision: "approve" | "reject") => {
     try {
@@ -392,6 +394,8 @@ function KycTab() {
   };
 
   if (isLoading) return <p className="text-white/50">Loading…</p>;
+  if (isError)
+    return <p className="text-white/50">Couldn’t load the KYC queue. Try again.</p>;
   if (pending.length === 0)
     return <p className="text-white/50">No KYC submissions waiting for review. 🎉</p>;
 

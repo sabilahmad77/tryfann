@@ -38,7 +38,8 @@ export interface DashboardStatsResponse {
     profile_completed: number;
     referral_joined: number;
     first_login: number;
-    conversation: number;
+    conversion: number;
+    conversation?: number; // deprecated alias (A5)
     pending: number;
     curator_percentage: number;
     watched_percentage: number;
@@ -382,7 +383,8 @@ export interface DashboardStatsGalleryResponse {
     is_referral_code?: boolean;
     total_referral_clicks?: number;
     total_clicks?: number;
-    conversation?: number;
+    conversion?: number;
+    conversation?: number; // deprecated alias (A5)
     pending?: number;
     artwork_count?: number;
     collection_count?: number;
@@ -411,7 +413,8 @@ export interface DashboardStatsAmbassadorResponse {
     referral_count?: number;
     active_referral_count?: number;
     pending?: number;
-    conversation?: number;
+    conversion?: number;
+    conversation?: number; // deprecated alias (A5)
     artwork_count?: number;
     collection_count?: number;
     user_followers?: number;

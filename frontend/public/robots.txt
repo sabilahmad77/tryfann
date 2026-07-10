@@ -14,8 +14,7 @@ Disallow: /settings
 Disallow: /signin
 Disallow: /signup
 Disallow: /forgot-password
-Disallow: /leaderboard
 Disallow: /feedback
 Disallow: /ref/
 
-Sitemap: https://tryfann.com/sitemap.xml
+Sitemap: https://www.tryfann.com/sitemap.xml

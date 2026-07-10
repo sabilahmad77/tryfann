@@ -30,6 +30,10 @@ import fannLogo from "@/assets/brand/fann-full-logo.svg";
 type Lang = "en" | "ar";
 type Props = { language: Lang; onApply: (persona?: string) => void; onSignIn: () => void };
 
+// A5: footer copyright year must not go stale. Computed once at module load.
+const CURRENT_YEAR = new Date().getFullYear();
+const CURRENT_YEAR_AR = CURRENT_YEAR.toLocaleString("ar-EG", { useGrouping: false });
+
 /* ── primitives ─────────────────────────────────────────────────────────── */
 const MAXW = 1800;
 // One width system for every section: ~95% of the viewport up to MAXW, so the
@@ -132,6 +136,7 @@ const T = {
     ledger: {
       title: ["Your ", "Readiness", " Ledger"],
       sub: "The Readiness Ledger tracks meaningful actions that prepare you for early access. It is not a public ranking system.",
+      sample: "Illustrative example — not real data",
       tags: ["Transparent", "Verified", "Purposeful"],
       progress: "Completed", statusLabel: "Status", status: "Profile Started",
       nextLabel: "Next Action", next: "Complete your portfolio details or continue your profile.",
@@ -194,7 +199,7 @@ const T = {
         { h: "Legal", links: ["Privacy Policy", "Terms of Use", "Cookies Policy"] },
       ],
       connect: "Connect", follow: "Follow", email: "hello@tryfann.com", region: "GCC / MENA First",
-      rights: "© 2025 TryFANN. All rights reserved.",
+      rights: `© ${CURRENT_YEAR} TryFANN. All rights reserved.`,
     },
   },
   ar: {
@@ -247,6 +252,7 @@ const T = {
     ledger: {
       title: ["سجل ", "الجاهزية", " الخاص بك"],
       sub: "يتتبّع سجل الجاهزية الإجراءات الهادفة التي تُعدّك للوصول المبكر. وهو ليس نظام ترتيب عام.",
+      sample: "مثال توضيحي — بيانات غير حقيقية",
       tags: ["شفّاف", "موثَّق", "هادف"],
       progress: "مكتمل", statusLabel: "الحالة", status: "بدأ الملف",
       nextLabel: "الإجراء التالي", next: "أكمل تفاصيل أعمالك أو تابع ملفك الشخصي.",
@@ -309,7 +315,7 @@ const T = {
         { h: "قانوني", links: ["سياسة الخصوصية", "شروط الاستخدام", "سياسة الكوكيز"] },
       ],
       connect: "تواصل", follow: "تابِعنا", email: "hello@tryfann.com", region: "الخليج/مينا أولًا",
-      rights: "© ٢٠٢٥ TryFANN. جميع الحقوق محفوظة.",
+      rights: `© ${CURRENT_YEAR_AR} TryFANN. جميع الحقوق محفوظة.`,
     },
   },
 } as const;
@@ -543,6 +549,13 @@ export function TfLanding({ language, onApply, onSignIn }: Props) {
             </div>
             {/* table */}
             <div style={{ padding: "8px 0" }}>
+              {/* A5: this ledger is a hardcoded demo — label it so the dated
+                  sample rows can't be mistaken for a real member's data. */}
+              <div style={{ display: "flex", justifyContent: "flex-end", padding: "8px 28px 0" }}>
+                <span className="tf-eyebrow" style={{ color: "var(--gold)", fontSize: 9.5, border: "1px solid var(--gold-hairline)", borderRadius: 999, padding: "3px 10px", letterSpacing: "0.08em" }}>
+                  {c.ledger.sample}
+                </span>
+              </div>
               <div style={{ display: "grid", gridTemplateColumns: "1.4fr 2fr 1fr 1fr", padding: "16px 28px", borderBottom: "1px solid var(--hairline)" }}>
                 {c.ledger.cols.map((h) => <span key={h} className="tf-eyebrow" style={{ color: "var(--ink-on-dark-3)", fontSize: 9.5 }}>{h}</span>)}
               </div>
