@@ -87,6 +87,7 @@
     "start": "npm run dev",
     "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
     "lint:watch": "nodemon",
-    "lint:fix": "eslint . --fix"
+    "lint:fix": "eslint . --fix",
+    "contract:data01": "node scripts/contract-data01.mjs"
   }
 }

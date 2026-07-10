@@ -40,8 +40,11 @@ export interface UpdateArtworkRequest {
 export const artworkApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
     getMyArtworks: build.query<ArtworkItem[], void>({
+      // DATA-01: mount read from the qualification namespace (was
+      // /market_final/artwork_artist). Create/update/delete below stay on the
+      // market_final resource (user mutations, not mount reads).
       query: () => ({
-        url: "/market_final/artwork_artist",
+        url: "/qualification/me/artworks",
         method: "GET",
       }),
       providesTags: ["Artwork"],

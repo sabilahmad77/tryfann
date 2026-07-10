@@ -241,3 +241,72 @@ class ConciergeRequestView(BaseAPIView):
                 "created_at": req.created_at.isoformat(),
             }
         )
+
+
+class MeDashboardView(BaseAPIView):
+    """Single-source dashboard stats (audit DATA-01).
+
+    Replaces the legacy /market_final/dashboard_stats(+_gallery/_ambassador).
+    The dashboard now reads tier/score from /qualification/me and stats from
+    here — one namespace, one source of truth.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        url = request.query_params.get("url")
+        return self.send_success_response(
+            data=services.dashboard_payload(request.user, base_url=url)
+        )
+
+
+class MeArtworksView(BaseAPIView):
+    """The signed-in user's artwork pieces (audit DATA-01: qualification namespace).
+
+    Read alias over the market_final ArtworkArtistCollection resource so the
+    dashboard mount never touches /market_final/*. Create/edit/delete stay on
+    the market_final resource (mutations, not mount reads)."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        from fann.market_final.models import ArtworkArtistCollection
+        from fann.market_final.serializers import ArtworkArtistCollectionSerializer
+
+        qs = ArtworkArtistCollection.objects.filter(user=request.user).order_by("-id")
+        data = ArtworkArtistCollectionSerializer(
+            qs, many=True, context={"request": request}
+        ).data
+        return self.send_success_response(data=data)
+
+
+class MeCollectionView(BaseAPIView):
+    """The signed-in user's collected pieces (audit DATA-01)."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        from fann.market_final.models import ArtworkCollection
+        from fann.market_final.serializers import ArtworkCollectionSerializer
+
+        qs = ArtworkCollection.objects.filter(user=request.user).order_by("-id")
+        data = ArtworkCollectionSerializer(
+            qs, many=True, context={"request": request}
+        ).data
+        return self.send_success_response(data=data)
+
+
+class MeRosterView(BaseAPIView):
+    """A gallery's artist roster (audit DATA-01)."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        from fann.market_final.models import ArtistRoaster
+        from fann.market_final.serializers import ArtistRoasterSerializer
+
+        qs = ArtistRoaster.objects.filter(user=request.user).order_by("-id")
+        data = ArtistRoasterSerializer(
+            qs, many=True, context={"request": request}
+        ).data
+        return self.send_success_response(data=data)

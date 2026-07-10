@@ -81,6 +81,23 @@ from django.db.models import IntegerField
 from django.db.models.functions import Cast
 from django.db.models import IntegerField, Avg, Count, Sum
 from .pagination import CustomPageNumberPagination
+from rest_framework.response import Response
+from rest_framework import status
+
+
+def _gone_dashboard():
+    """410 Gone tombstone for the retired dashboard-stat endpoints (audit
+    DATA-01). The single source of truth is GET /api/qualification/me/dashboard.
+    Returns the app's standard envelope so clients parse it uniformly."""
+    return Response(
+        {
+            "success": False,
+            "status_code": status.HTTP_410_GONE,
+            "message": "Endpoint retired. Use GET /api/qualification/me/dashboard.",
+            "data": None,
+        },
+        status=status.HTTP_410_GONE,
+    )
 
 
 class UserRegisterView(BaseAPIView, CreateAPIView):
@@ -477,101 +494,11 @@ class DashboardStatAPIView(BaseAPIView, APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        try:
-            user = request.user
-            url = request.query_params.get("url")
-            BASE_REFERRAL_URL = url + "/ref/" if url else "https://www.tryfann.com/ref/"
-
-            # Self-heal accounts created before codes were issued at signup
-            # (audit BRK-04): issue a real code on first read.
-            if not user.referral_code:
-                from fann.users.utils import unique_referral_code
-
-                user.referral_code = unique_referral_code()
-                user.save(update_fields=["referral_code"])
-            referral_link = f"{BASE_REFERRAL_URL}{user.referral_code}"
-
-            referral_count = UserReferral.objects.filter(referenced_by=user).count()
-            pending = UserReferral.objects.filter(
-                referenced_by=user, referenced_to__profile_completed=False
-            ).count()
-            conversion = UserReferral.objects.filter(
-                referenced_by=user, referenced_to__profile_completed=True
-            ).count()
-
-            user_followers = UserFollower.objects.filter(follow_to=user).count()
-            user_following = UserFollower.objects.filter(follow_by=user).count()
-
-            artwork_count = ArtworkArtistCollection.objects.filter(user=user).count()
-            collection_count = ArtworkCollection.objects.filter(user=user).count()
-
-            # Honest portfolio value: sum of the user's own listed/collected
-            # pieces. Zero pieces -> zero value; no growth% is reported until
-            # there is real history to compute one from.
-            collected_value = (
-                ArtworkCollection.objects.filter(user=user).aggregate(
-                    v=Sum("purchase_value")
-                )["v"]
-                or 0
-            )
-            # `price` is a legacy CharField: SQLite SUMs strings but Postgres
-            # refuses, so parse defensively in Python (bad values count as 0).
-            def _num(v):
-                try:
-                    return float(v)
-                except (TypeError, ValueError):
-                    return 0.0
-
-            listed_value = sum(
-                _num(v)
-                for v in ArtworkArtistCollection.objects.filter(
-                    user=user
-                ).values_list("price", flat=True)
-            )
-            portfolio_value = round(float(collected_value) + listed_value, 2)
-
-            # Market insight from real member-collection data only. Physical
-            # art only — no "Digital" framing (audit FAKE-04). Empty until
-            # real rows exist; the UI shows an empty state instead.
-            insight_rows = (
-                ArtworkCollection.objects.exclude(category__isnull=True)
-                .exclude(category__iexact="digital")
-                .values("category")
-                .annotate(avg_price=Avg("purchase_value"), total=Count("id"))
-                .order_by("-total")
-            )
-            total_artworks = sum(row["total"] for row in insight_rows)
-            market_insight = [
-                {
-                    "category": row["category"],
-                    "description": (
-                        f"{row['total']} verified piece(s) in member collections"
-                    ),
-                    "avg_price": round(float(row["avg_price"] or 0), 2),
-                    "percentage": round(row["total"] / total_artworks * 100, 2),
-                }
-                for row in insight_rows
-            ] if total_artworks else []
-
-            data = {
-                "total_referral_clicks": user.total_referral_clicks,
-                "referral_link": referral_link,
-                "is_referral_code": bool(user.referral_code),
-                "referral_count": referral_count,
-                "total_clicks": referral_count,
-                "conversation": conversion,
-                "pending": pending,
-                "artwork_count": artwork_count,
-                "collection_count": collection_count,
-                "user_followers": user_followers,
-                "user_following": user_following,
-                "portfolio_value": portfolio_value,
-                "profile_complete": user.profile_completed,
-                "market_insight": market_insight,
-            }
-            return self.send_success_response(data=data)
-        except Exception as e:
-            return self.send_bad_request_response(message=str(e))
+        # DATA-01: retired. The single source of truth for dashboard stats is
+        # GET /api/qualification/me/dashboard. This handler is kept as a 410
+        # Gone tombstone so any stale client learns the endpoint moved instead
+        # of silently double-fetching a second source of truth.
+        return _gone_dashboard()
 
 
 class RefreshTokenView(BaseAPIView, APIView):
@@ -843,63 +770,8 @@ class DashboardStatAmbassadorAPIView(BaseAPIView, APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        try:
-            user = request.user
-            url = request.query_params.get("url")
-            BASE_REFERRAL_URL = url + "/ref/" if url else "https://www.tryfann.com/ref/"
-
-            # Self-heal missing referral codes (audit BRK-04).
-            if not user.referral_code:
-                from fann.users.utils import unique_referral_code
-
-                user.referral_code = unique_referral_code()
-                user.save(update_fields=["referral_code"])
-            referral_link = f"{BASE_REFERRAL_URL}{user.referral_code}"
-
-            referral_active_count = UserReferral.objects.filter(
-                referenced_by=user, referenced_to__is_active=True
-            ).count()
-            referral_count = UserReferral.objects.filter(referenced_by=user).count()
-            pending = UserReferral.objects.filter(
-                referenced_by=user, referenced_to__profile_completed=False
-            ).count()
-            conversion = UserReferral.objects.filter(
-                referenced_by=user, referenced_to__profile_completed=True
-            ).count()
-
-            user_followers = UserFollower.objects.filter(follow_to=user).count()
-            user_following = UserFollower.objects.filter(follow_by=user).count()
-
-            artwork_count = ArtworkArtistCollection.objects.filter(user=user).count()
-            collection_count = ArtworkCollection.objects.filter(user=user).count()
-
-            # Only the user's own declared follower ranges — no invented
-            # engagement rates or post counts.
-            social_data = {
-                "instagram_follower": getattr(user.instagram_follower, "range", None),
-                "tiktok_follower": getattr(user.tiktok_follower, "range", None),
-                "youtube_subscriber": getattr(user.youtube_subscribers, "range", None),
-                "twitter_follower": getattr(user.twitter_follower, "range", None),
-            }
-
-            data = {
-                "total_referral_clicks": user.total_referral_clicks,
-                "referral_link": referral_link,
-                "is_referral_code": bool(user.referral_code),
-                "referral_count": referral_count,
-                "active_referral_count": referral_active_count,
-                "pending": pending,
-                "conversation": conversion,
-                "artwork_count": artwork_count,
-                "collection_count": collection_count,
-                "user_followers": user_followers,
-                "user_following": user_following,
-                "social_stats": social_data,
-                "profile_complete": user.profile_completed,
-            }
-            return self.send_success_response(data=data)
-        except Exception as e:
-            return self.send_bad_request_response(message=str(e))
+        # DATA-01: retired -> GET /api/qualification/me/dashboard (410 tombstone).
+        return _gone_dashboard()
 
 
 
@@ -935,50 +807,8 @@ class DashboardStatGalleryAPIView(BaseAPIView, APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        try:
-            user = request.user
-            url = request.query_params.get("url")
-            BASE_REFERRAL_URL = url + "/ref/" if url else "https://www.tryfann.com/ref/"
-
-            if not user.referral_code:
-                from fann.users.utils import unique_referral_code
-
-                user.referral_code = unique_referral_code()
-                user.save(update_fields=["referral_code"])
-            referral_link = f"{BASE_REFERRAL_URL}{user.referral_code}"
-
-            referral_count = UserReferral.objects.filter(referenced_by=user).count()
-            pending = UserReferral.objects.filter(
-                referenced_by=user, referenced_to__profile_completed=False
-            ).count()
-            conversion = UserReferral.objects.filter(
-                referenced_by=user, referenced_to__profile_completed=True
-            ).count()
-
-            user_followers = UserFollower.objects.filter(follow_to=user).count()
-            user_following = UserFollower.objects.filter(follow_by=user).count()
-            artwork_count = ArtworkArtistCollection.objects.filter(user=user).count()
-            collection_count = ArtworkCollection.objects.filter(user=user).count()
-
-            data = {
-                "referral_link": referral_link,
-                "is_referral_code": bool(user.referral_code),
-                "total_referral_clicks": user.total_referral_clicks,
-                "referral_count": referral_count,
-                "total_clicks": referral_count,
-                "conversation": conversion,
-                "pending": pending,
-                "user_followers": user_followers,
-                "user_following": user_following,
-                "artwork_count": artwork_count,
-                "collection_count": collection_count,
-                "profile_complete": user.profile_completed,
-            }
-
-            return self.send_success_response(data=data)
-
-        except Exception as e:
-            return self.send_bad_request_response(message=str(e))
+        # DATA-01: retired -> GET /api/qualification/me/dashboard (410 tombstone).
+        return _gone_dashboard()
 
 
 class ArtistRoasterViewSet(BaseAPIView, viewsets.ModelViewSet):

@@ -17,6 +17,10 @@ from fann.qualification.views import (
     CompleteTaskView,
     ConciergeRequestView,
     MeView,
+    MeDashboardView,
+    MeArtworksView,
+    MeCollectionView,
+    MeRosterView,
     MyTasksView,
     RoleProfileView,
 )
@@ -24,6 +28,10 @@ from fann.qualification.views import (
 urlpatterns = [
     path("me", MeView.as_view(), name="qualification-me"),
     path("me/tasks", MyTasksView.as_view(), name="qualification-my-tasks"),
+    path("me/dashboard", MeDashboardView.as_view(), name="qualification-me-dashboard"),
+    path("me/artworks", MeArtworksView.as_view(), name="qualification-me-artworks"),
+    path("me/collection", MeCollectionView.as_view(), name="qualification-me-collection"),
+    path("me/roster", MeRosterView.as_view(), name="qualification-me-roster"),
     path(
         "me/tasks/<slug:key>/complete",
         CompleteTaskView.as_view(),

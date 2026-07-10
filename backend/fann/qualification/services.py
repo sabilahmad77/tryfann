@@ -479,3 +479,111 @@ def reject_user_task(user_task, reviewer=None):
     )
     user_task.refresh_from_db()
     return user_task
+
+
+# --- DATA-01: single-source dashboard read (retires legacy /market_final stats) ---
+
+def _num(v):
+    """Parse a possibly-string numeric to float; junk -> 0.0 (Postgres-safe)."""
+    try:
+        return float(v)
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def dashboard_payload(user, base_url=None):
+    """Role-aware dashboard stats — the ONE source of truth (audit DATA-01).
+
+    Mirrors the honest fields the retired /market_final/dashboard_stats*
+    endpoints returned, computed from real data. Numbers are integers
+    (audit DATA-02); the referral funnel key is `conversion` (audit A5),
+    with `conversation` kept only as a backward-compatible alias.
+    """
+    from django.db.models import Avg, Count, Sum
+    from fann.users.models import UserReferral
+    from fann.users.utils import unique_referral_code
+    from fann.market_final.models import (
+        ArtworkArtistCollection,
+        ArtworkCollection,
+        UserFollower,
+    )
+
+    rp = ensure_qualification(user)
+    base = (base_url.rstrip("/") + "/ref/") if base_url else "https://www.tryfann.com/ref/"
+    if not user.referral_code:
+        user.referral_code = unique_referral_code()
+        user.save(update_fields=["referral_code"])
+
+    referral_count = UserReferral.objects.filter(referenced_by=user).count()
+    pending = UserReferral.objects.filter(
+        referenced_by=user, referenced_to__profile_completed=False
+    ).count()
+    conversion = UserReferral.objects.filter(
+        referenced_by=user, referenced_to__profile_completed=True
+    ).count()
+    active_referral_count = UserReferral.objects.filter(
+        referenced_by=user, referenced_to__is_active=True
+    ).count()
+    user_followers = UserFollower.objects.filter(follow_to=user).count()
+    user_following = UserFollower.objects.filter(follow_by=user).count()
+    artwork_count = ArtworkArtistCollection.objects.filter(user=user).count()
+    collection_count = ArtworkCollection.objects.filter(user=user).count()
+
+    data = {
+        "referral_link": f"{base}{user.referral_code}",
+        "is_referral_code": bool(user.referral_code),
+        "total_referral_clicks": int(user.total_referral_clicks or 0),
+        "referral_count": int(referral_count),
+        "total_clicks": int(referral_count),
+        "conversion": int(conversion),
+        "conversation": int(conversion),  # deprecated alias (A5)
+        "pending": int(pending),
+        "user_followers": int(user_followers),
+        "user_following": int(user_following),
+        "artwork_count": int(artwork_count),
+        "collection_count": int(collection_count),
+        "profile_complete": bool(user.profile_completed),
+        "track": rp.track,
+    }
+
+    if rp.track == RoleProfile.GAME:
+        collected = ArtworkCollection.objects.filter(user=user).aggregate(
+            v=Sum("purchase_value")
+        )["v"] or 0
+        listed = sum(
+            _num(v)
+            for v in ArtworkArtistCollection.objects.filter(user=user).values_list(
+                "price", flat=True
+            )
+        )
+        data["portfolio_value"] = round(float(collected) + listed, 2)
+
+        rows = (
+            ArtworkCollection.objects.exclude(category__isnull=True)
+            .exclude(category__iexact="digital")
+            .values("category")
+            .annotate(avg_price=Avg("purchase_value"), total=Count("id"))
+            .order_by("-total")
+        )
+        total_art = sum(r["total"] for r in rows)
+        data["market_insight"] = [
+            {
+                "category": r["category"],
+                "description": f"{r['total']} verified piece(s) in member collections",
+                "avg_price": round(float(r["avg_price"] or 0), 2),
+                "percentage": round(r["total"] / total_art * 100, 2),
+            }
+            for r in rows
+        ] if total_art else []
+
+        role = (getattr(user, "role", "") or "").lower()
+        if role == "ambassador":
+            data["active_referral_count"] = int(active_referral_count)
+            data["social_stats"] = {
+                "instagram_follower": getattr(user.instagram_follower, "range", None),
+                "tiktok_follower": getattr(user.tiktok_follower, "range", None),
+                "youtube_subscriber": getattr(user.youtube_subscribers, "range", None),
+                "twitter_follower": getattr(user.twitter_follower, "range", None),
+            }
+
+    return data

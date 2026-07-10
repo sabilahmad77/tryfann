@@ -447,12 +447,14 @@ export const dashboardApi = baseApi.injectEndpoints({
       }),
     }),
 
-    // Get Dashboard Stats - GET /api/market_final/dashboard_stats
+    // Get Dashboard Stats - GET /api/qualification/me/dashboard
+    // DATA-01: single source of truth. Was /market_final/dashboard_stats
+    // (410 Gone). The qualification namespace now serves ALL dashboard reads.
     getDashboardStats: builder.query<DashboardStatsResponse, void>({
       query: () => {
         const currentUrl = typeof window !== "undefined" ? window.location.origin : "";
         return {
-          url: `/market_final/dashboard_stats${currentUrl ? `?url=${encodeURIComponent(currentUrl)}` : ""}`,
+          url: `/qualification/me/dashboard${currentUrl ? `?url=${encodeURIComponent(currentUrl)}` : ""}`,
           method: "GET",
         };
       },
@@ -468,23 +470,25 @@ export const dashboardApi = baseApi.injectEndpoints({
     // User WatchEarn - POST /api/market_final/user_watch_earn
     // Generate Redeem Code - POST /api/market_final/redeem_code_generate
     // Get Dashboard Stats Gallery - GET /api/market_final/dashboard_stats_gallery
+    // DATA-01: was /market_final/dashboard_stats_gallery (410 Gone).
     getDashboardStatsGallery: builder.query<DashboardStatsGalleryResponse, void>({
       query: () => {
         const currentUrl = typeof window !== "undefined" ? window.location.origin : "";
         return {
-          url: `/market_final/dashboard_stats_gallery${currentUrl ? `?url=${encodeURIComponent(currentUrl)}` : ""}`,
+          url: `/qualification/me/dashboard${currentUrl ? `?url=${encodeURIComponent(currentUrl)}` : ""}`,
           method: "GET",
         };
       },
       providesTags: ["User", "Gallery"],
     }),
 
-    // Get Dashboard Stats Ambassador - GET /api/market_final/dashboard_stats_ambassador
+    // Get Dashboard Stats Ambassador - GET /api/qualification/me/dashboard
+    // DATA-01: was /market_final/dashboard_stats_ambassador (410 Gone).
     getDashboardStatsAmbassador: builder.query<DashboardStatsAmbassadorResponse, void>({
       query: () => {
         const currentUrl = typeof window !== "undefined" ? window.location.origin : "";
         return {
-          url: `/market_final/dashboard_stats_ambassador${currentUrl ? `?url=${encodeURIComponent(currentUrl)}` : ""}`,
+          url: `/qualification/me/dashboard${currentUrl ? `?url=${encodeURIComponent(currentUrl)}` : ""}`,
           method: "GET",
         };
       },
@@ -504,8 +508,11 @@ export const dashboardApi = baseApi.injectEndpoints({
     // Artist Roaster APIs
     // Get Artist Roaster List - GET /api/market_final/artist_roaster
     getArtistRoaster: builder.query<ArtistRoasterListResponse, void>({
+      // DATA-01: mount read from the qualification namespace (was
+      // /market_final/artist_roaster). Create/update/delete stay on the
+      // market_final resource below (user mutations, not mount reads).
       query: () => ({
-        url: "/market_final/artist_roaster",
+        url: "/qualification/me/roster",
         method: "GET",
       }),
       providesTags: ["Gallery"],
@@ -564,8 +571,11 @@ export const dashboardApi = baseApi.injectEndpoints({
     // Artwork Collection APIs
     // Get Artwork Collection List - GET /api/market_final/artwork_collection
     getArtworkCollection: builder.query<ArtworkCollectionListResponse, void>({
+      // DATA-01: mount read from the qualification namespace (was
+      // /market_final/artwork_collection). Create/update/delete stay on the
+      // market_final resource below (user mutations, not mount reads).
       query: () => ({
-        url: "/market_final/artwork_collection",
+        url: "/qualification/me/collection",
         method: "GET",
       }),
       providesTags: ["Gallery"],
