@@ -18,6 +18,24 @@ class IsSuperAdmin(BasePermission):
         )
 
 
+class IsStaffSuperuser(BasePermission):
+    """Elevated admin gate (audit ADM-01).
+
+    Requires the Django ``is_staff`` AND ``is_superuser`` flags — NOT the
+    string ``role``. A staff member can view the admin queues (IsAdminUser),
+    but only a superuser may make irreversible decisions: KYC approve/reject,
+    applicant moderation (tier/priority/flag), and task-review moderation.
+    """
+
+    message = "Superuser privileges are required for this action."
+
+    def has_permission(self, request, view):
+        u = request.user
+        return bool(
+            u and u.is_authenticated and u.is_staff and u.is_superuser
+        )
+
+
 class IsCustomer(BasePermission):
     def has_permission(self, request, view):
         # Ensure the user is authenticated and has a 'role' field

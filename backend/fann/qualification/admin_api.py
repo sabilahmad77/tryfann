@@ -15,6 +15,7 @@ from django.utils.dateparse import parse_datetime
 from django.utils.text import slugify
 from rest_framework.permissions import IsAdminUser
 
+from fann.common.permissions import IsStaffSuperuser
 from fann.common.response_mixins import BaseAPIView
 from fann.users.models import KYCVerification, User, UserReferral
 from fann.qualification import services
@@ -201,9 +202,12 @@ class AdminApplicantsCSVView(BaseAPIView):
 
 
 class AdminApplicantActionView(BaseAPIView):
-    """Whitelist console actions: prioritize / set_tier / clear_override / flag / recompute."""
+    """Whitelist console actions: prioritize / set_tier / clear_override / flag / recompute.
 
-    permission_classes = [IsAdminUser]
+    ADM-01: these mutate a user's whitelist tier (the locked progression), so
+    they require a superuser, not merely a staff viewer."""
+
+    permission_classes = [IsStaffSuperuser]
 
     def post(self, request, user_id):
         try:
@@ -319,7 +323,8 @@ class AdminPendingTasksView(BaseAPIView):
 
 
 class AdminReviewTaskView(BaseAPIView):
-    permission_classes = [IsAdminUser]
+    # ADM-01: moderation decision (approve/reject a submission) → superuser only.
+    permission_classes = [IsStaffSuperuser]
 
     def post(self, request, user_task_id):
         try:
@@ -398,9 +403,11 @@ class AdminPendingKYCView(BaseAPIView):
 
 class AdminReviewKYCView(BaseAPIView):
     """Approve / reject a KYC submission. Approval fires the qualification
-    KYC signal (awards KYC points + recompute) just like a real verification."""
+    KYC signal (awards KYC points + recompute) just like a real verification.
 
-    permission_classes = [IsAdminUser]
+    ADM-01: an identity decision — gated on superuser, not just staff."""
+
+    permission_classes = [IsStaffSuperuser]
 
     def post(self, request, kyc_id):
         try:
