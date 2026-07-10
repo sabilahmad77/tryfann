@@ -28,9 +28,10 @@ export interface UserProfileData {
   language: string | null;
   phone_number: string | null;
   bio: string | null;
-  points: string;
+  // DATA-02: server sends real integers (legacy CharFields coerced server-side).
+  points: number;
   referral_code: string;
-  profile_step: string;
+  profile_step: number;
   profile_completed: boolean;
   try_market: boolean;
   title: string | null;

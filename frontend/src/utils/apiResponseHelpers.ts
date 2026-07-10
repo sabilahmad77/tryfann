@@ -68,11 +68,15 @@ export function parseGetUserDetailsResponse(response: unknown): {
  * @returns Step index (0-based) for ProfileCompletion component
  */
 export function mapProfileStepToOnboardingStep(
-    profileStep: string | null | undefined,
+    profileStep: string | number | null | undefined,
     persona: string
 ): number {
-    // Convert profile_step to number, default to 0 if invalid
-    const step = profileStep ? parseInt(profileStep, 10) : 0;
+    // Convert profile_step to number, default to 0 if invalid. Accepts the new
+    // integer form (DATA-02) as well as the legacy string.
+    const step =
+        profileStep === null || profileStep === undefined
+            ? 0
+            : parseInt(String(profileStep), 10) || 0;
     const isAmbassador = persona === "ambassador";
 
     if (isAmbassador) {

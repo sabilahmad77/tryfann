@@ -21,6 +21,26 @@ SENSITIVE_USER_FIELDS = (
 )
 
 
+# Legacy CharField columns that hold a number but serialize as a string
+# ("75", "1"). The client must receive real integers (audit DATA-02).
+NUMERIC_USER_FIELDS = ("points", "profile_step")
+
+
+def _to_int(value):
+    try:
+        return int(float(value))
+    except (TypeError, ValueError):
+        return 0
+
+
+def coerce_numeric_user_fields(data):
+    """Cast the legacy string-numeric user fields to int, in place."""
+    for field in NUMERIC_USER_FIELDS:
+        if field in data and not isinstance(data[field], bool):
+            data[field] = _to_int(data[field])
+    return data
+
+
 def strip_sensitive_user_fields(data):
     """Remove every sensitive key from a serialized user dict, in place.
 
@@ -42,7 +62,14 @@ def strip_sensitive_user_fields(data):
 
 
 class ClientSafeUserMixin:
-    """Mixin for any User ModelSerializer: strips sensitive fields on output."""
+    """Mixin for any User ModelSerializer.
+
+    Strips sensitive fields (SEC-03) and casts legacy string-numeric fields to
+    integers (DATA-02) so every user payload is uniformly client-safe.
+    """
 
     def to_representation(self, instance):
-        return strip_sensitive_user_fields(super().to_representation(instance))
+        data = super().to_representation(instance)
+        strip_sensitive_user_fields(data)
+        coerce_numeric_user_fields(data)
+        return data
