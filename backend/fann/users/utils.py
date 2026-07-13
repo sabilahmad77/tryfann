@@ -5,7 +5,12 @@ import uuid
 from django.core.mail import EmailMessage
 from django.template.loader import get_template
 
-from core import settings
+# Use Django's active settings (respects DJANGO_SETTINGS_MODULE + env overrides).
+# `from core import settings` imported the RAW base module, whose leftover
+# DEFAULT_FROM_EMAIL="Sales@viko.world" (an unverified domain) made every
+# verification email 403 at Resend and get swallowed by the caller's try/except
+# — so signups sent no email at all.
+from django.conf import settings
 from fann.users.models import User, VerificationCode
 
 

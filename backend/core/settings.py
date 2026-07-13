@@ -197,7 +197,10 @@ SESSION_COOKIE_SECURE = True
 # EMAIL
 # --------------------------------------------------
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-DEFAULT_FROM_EMAIL = "Sales@viko.world"
+# Base default. Production overrides via the DEFAULT_FROM_EMAIL env var. Never
+# leave an unverified domain here — Resend 403-rejects any send whose from-domain
+# it can't verify, and that error is swallowed, so signups would send no email.
+DEFAULT_FROM_EMAIL = "TryFANN <no-reply@tryfann.com>"
 EMAIL_HOST = "live.smtp.mailtrap.io"          # correct host
 EMAIL_HOST_USER = "api"
 EMAIL_HOST_PASSWORD = "8214d0a7136a55332e6b5bc39fe8534c"
