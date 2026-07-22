@@ -171,6 +171,14 @@ def credit_referral(referee):
     if entry:
         ReferralCredit.objects.filter(pk=credit.pk).update(ledger_entry=entry)
     recompute(referrer)
+    # P0-4: referral loop conversion — a verified referral actually credited.
+    from fann.qualification.models import AnalyticsEvent
+
+    AnalyticsEvent.objects.create(
+        user=referrer,
+        name="referral_converted",
+        props={"referee": referee.pk, "points": REFERRAL_POINTS},
+    )
     return credit
 
 

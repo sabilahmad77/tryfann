@@ -167,14 +167,20 @@ class AdminOverviewView(BaseAPIView):
         for ev in landing_qs:
             src = (ev.props or {}).get("utm_source") or "(direct)"
             utm[src] = utm.get(src, 0) + 1
+        # P0-4: full per-step funnel from the AnalyticsEvent store (also closes
+        # M1 — the missing signup_started / completed steps).
+        def _ev(*names):
+            return AnalyticsEvent.objects.filter(name__in=names).count()
+
         funnel = {
-            "landing_views": landing_qs.count(),
-            "roles_selected": AnalyticsEvent.objects.filter(
-                name="signup_role_selected"
-            ).count(),
-            "signups_submitted": AnalyticsEvent.objects.filter(
-                name="signup_submitted"
-            ).count(),
+            "landing_views": landing_qs.count() + _ev("page_view"),
+            "signup_started": _ev("signup_started"),
+            "roles_selected": _ev("signup_role_selected", "role_selected"),
+            "signups_submitted": _ev("signup_submitted"),
+            "signup_completed": _ev("signup_completed"),
+            "email_verified": _ev("email_verified"),
+            "referral_shared": _ev("referral_shared"),
+            "referral_converted": _ev("referral_converted"),
             "accounts_created": total,
             "verified": verified,
         }

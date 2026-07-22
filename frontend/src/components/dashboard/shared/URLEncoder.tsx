@@ -14,6 +14,7 @@ import {
 import { Button } from "../../ui/button";
 import { Input } from "../../ui/input";
 import { toast } from "sonner";
+import { track, EVENTS } from "@/utils/analytics";
 import { useLanguage } from "@/contexts/useLanguage";
 import {
   useLazyGenerateReferralCodeQuery,
@@ -125,6 +126,7 @@ export function URLEncoder({
     }
     navigator.clipboard.writeText(referralLink);
     setCopied(true);
+    track(EVENTS.REFERRAL_SHARED, { channel: "copy" });
     toast.success(t.copySuccess);
     setTimeout(() => setCopied(false), 2000);
   };

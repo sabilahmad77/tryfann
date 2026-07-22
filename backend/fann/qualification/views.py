@@ -25,11 +25,25 @@ from fann.qualification.serializers import (
 TIER_LABELS = dict(WhitelistEntry.TIER_CHOICES)
 
 
+def _anonymize_ip(ip):
+    """P0-4: drop the last IPv4 octet / IPv6 suffix so we never store a full
+    visitor IP for analytics (GDPR-friendly, mirrors GA's anonymize_ip)."""
+    if not ip:
+        return None
+    if ":" in ip:  # IPv6 — keep first 3 hextets
+        return ":".join(ip.split(":")[:3]) + "::"
+    parts = ip.split(".")
+    if len(parts) == 4:
+        parts[-1] = "0"
+        return ".".join(parts)
+    return None
+
+
 def _client_ip(request):
     xff = request.META.get("HTTP_X_FORWARDED_FOR")
     if xff:
-        return xff.split(",")[0].strip()
-    return request.META.get("REMOTE_ADDR") or None
+        return _anonymize_ip(xff.split(",")[0].strip())
+    return _anonymize_ip(request.META.get("REMOTE_ADDR"))
 
 
 def me_payload(user):

@@ -130,6 +130,7 @@ class UserRegisterSerializer(serializers.Serializer):
     )
     points = serializers.CharField(required=True)
     referral_code = serializers.CharField(required=False, allow_blank=True)
+    utm_source = serializers.CharField(required=False, allow_blank=True)  # P0-4 attribution
 
     def validate_email(self, value):
         if User.objects.filter(email=value).exists():
@@ -168,6 +169,16 @@ class UserRegisterSerializer(serializers.Serializer):
             referral_code = validated_data.get("referral_code", "")
             points = validated_data.get("points", "")
 
+            # P0-4: acquisition attribution. A referred signup is credited to the
+            # code; otherwise a utm_source (if the client passed one) or "direct".
+            utm_source = (validated_data.get("utm_source") or "").strip()
+            if referral_code:
+                acquisition_source = f"referral:{referral_code}"
+            elif utm_source:
+                acquisition_source = utm_source[:120]
+            else:
+                acquisition_source = "direct"
+
             user = User.objects.create(
                 email=email,
                 first_name=first_name,
@@ -178,6 +189,7 @@ class UserRegisterSerializer(serializers.Serializer):
                 is_verify=False,
                 profile_step=1,
                 try_market=True,
+                acquisition_source=acquisition_source,
                 # Every role gets a real referral code at signup — links must
                 # never render as /ref/None (audit BRK-04 / plan TECH-5).
                 referral_code=unique_referral_code(),

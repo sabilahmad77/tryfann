@@ -318,6 +318,13 @@ class RoleApplicationView(BaseAPIView, APIView):
                 update_fields.append("role")
 
             user.save(update_fields=update_fields)
+            # P0-4: role application submitted — funnel step.
+            from fann.qualification.models import AnalyticsEvent
+
+            AnalyticsEvent.objects.create(
+                user=user, name="application_submitted",
+                props={"role": user.role, "completed": bool(user.profile_completed)},
+            )
             data = UserFinalMarketSerializer(
                 user, context={"request": request}
             ).data
@@ -1335,6 +1342,12 @@ class VerifyEmailView(BaseAPIView):
         if not already:
             user.is_verify = True
             user.save(update_fields=["is_verify"])
+            # P0-4: email verified — funnel step. Only on the real transition.
+            from fann.qualification.models import AnalyticsEvent
+
+            AnalyticsEvent.objects.create(
+                user=user, name="email_verified", props={"role": user.role}
+            )
         UserVerifications.objects.filter(user=user).delete()
         return self.send_success_response(
             message="Email already verified." if already else "Email verified successfully.",

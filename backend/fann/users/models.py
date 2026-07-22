@@ -156,6 +156,9 @@ class User(AbstractUser):
     fann_2fa_otp = models.CharField(max_length=100, **NULL_AND_BLANK)
     fann_2fa_otp_created = models.DateTimeField(null=True, blank=True)
     is_deleted = models.BooleanField(default=False)
+    # P0-4: how this user first arrived (e.g. "referral:TF-XXXX", a utm_source,
+    # or "direct"). Powers acquisition attribution in the admin funnel.
+    acquisition_source = models.CharField(max_length=120, **NULL_AND_BLANK)
     # Ambassador
     instagram_follower = models.ForeignKey(
         InstagramFollowers,

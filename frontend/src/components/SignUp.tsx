@@ -5,7 +5,7 @@ import {
 } from "@/components/auth/GoogleAuthButton";
 import { useTrackEventMutation } from "@/services/api/qualificationApi";
 import { useGetRegionsQuery } from "@/services/api/regionApi";
-import { getSessionId } from "@/utils/analytics";
+import { getSessionId, track, gaEvent, EVENTS } from "@/utils/analytics";
 import { setTokens, type UserProfileData } from "@/store/authSlice";
 import { persistor } from "@/store/store";
 import { clearAllAuthState } from "@/utils/auth";
@@ -95,6 +95,11 @@ export function SignUp({
   }, [initialPersona]);
 
   const [trackEvent] = useTrackEventMutation();
+
+  // P0-4: top of the signup funnel — fired once when the signup view mounts.
+  useEffect(() => {
+    track(EVENTS.SIGNUP_STARTED);
+  }, []);
 
   // React Hook Form setup
   const {
@@ -488,6 +493,7 @@ export function SignUp({
         session_id: getSessionId(),
         props: { role: selectedPersona },
       });
+      gaEvent(EVENTS.ROLE_SELECTED, { role: selectedPersona });
       setStep(2);
     }
   };
@@ -508,6 +514,7 @@ export function SignUp({
         session_id: getSessionId(),
         props: { role: getRoleFromPersona(selectedPersona) },
       });
+      gaEvent(EVENTS.SIGNUP_SUBMITTED, { role: getRoleFromPersona(selectedPersona) });
       // Split full name into first and last name
       const nameParts = data.fullName.trim().split(/\s+/);
       const firstName = nameParts[0] || "";
@@ -655,6 +662,10 @@ export function SignUp({
               : "تم إنشاء الحساب بنجاح!";
         }
 
+        // P0-4: account created — funnel conversion.
+        track(EVENTS.SIGNUP_COMPLETED, {
+          role: getRoleFromPersona(selectedPersona),
+        });
         // Show success toast
         toast.success(successMessage);
 
