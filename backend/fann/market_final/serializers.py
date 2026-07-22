@@ -616,7 +616,10 @@ class KYCVerificationSerializer(serializers.Serializer):
             "invalid_choice": "Invalid id_type selected. id_type must be one of: Passport, National ID, Emirates ID, Iqama (Saudi Residency), Driver's License"
         },
     )
-    id_number = serializers.CharField(required=False)
+    # N6: id_number is the one field every real KYC submission sends, so
+    # requiring it rejects an empty POST (was silently 200) with a typed 400
+    # without breaking the real multi-field flow.
+    id_number = serializers.CharField(required=True)
     dob = serializers.DateField(required=False)
     country = serializers.CharField(required=False)
     state = serializers.CharField(required=False)
@@ -730,6 +733,23 @@ class KYCVerificationSerializer(serializers.Serializer):
 class UserRewardSerializer(serializers.Serializer):
     goal_type = serializers.JSONField(required=True)
     points_reward = serializers.JSONField(required=True)
+
+    def validate(self, attrs):
+        # H3: goal_type / points_reward are free-form JSON; the create logic
+        # iterates them, so a scalar (e.g. points_reward=5) used to crash with a
+        # raw "'int' object is not iterable" leak. Enforce list-of-numbers here
+        # so malformed input returns a typed 400 instead.
+        for field in ("goal_type", "points_reward"):
+            if not isinstance(attrs.get(field), list):
+                raise serializers.ValidationError({field: "Must be a list."})
+        for v in attrs.get("points_reward", []):
+            try:
+                int(v)
+            except (TypeError, ValueError):
+                raise serializers.ValidationError(
+                    {"points_reward": "Must be a list of numbers."}
+                )
+        return attrs
 
     def create(self, validated_data):
         request_user = self.context.get("request_user")

@@ -45,6 +45,31 @@ def _parse_dt(value):
 TIER_LABELS = dict(WhitelistEntry.TIER_CHOICES)
 
 
+# H4: automated-test harness accounts (flow_/closed_/intdb_/fixed_/maillive_/
+# pgreal_/… and +tf plus-addresses) pollute the production funnel and inflate
+# the fraud counter. Exclude them from every admin view so counts + fraud
+# signal reflect real users. (Reversible: a filter, not a delete.)
+TEST_EMAIL_REGEX = (
+    r"^(flow|flow2|closed|intdb|fixed|maillive|pgreal|staffonly|reftest)_"
+)
+
+
+def _exclude_test_accounts(qs, email_field="user__email"):
+    return qs.exclude(**{f"{email_field}__iregex": TEST_EMAIL_REGEX}).exclude(
+        **{f"{email_field}__icontains": "+tf"}
+    )
+
+
+def _test_account_user_ids():
+    ids = set(
+        User.objects.filter(email__iregex=TEST_EMAIL_REGEX).values_list("id", flat=True)
+    )
+    ids |= set(
+        User.objects.filter(email__icontains="+tf").values_list("id", flat=True)
+    )
+    return ids
+
+
 def _applicant_row(rp, pending_by_user, fraud_user_ids, balances, tiers):
     u = rp.user
     return {
@@ -69,7 +94,9 @@ def _applicant_row(rp, pending_by_user, fraud_user_ids, balances, tiers):
 
 
 def _applicants_queryset(request):
-    qs = RoleProfile.objects.select_related("user").order_by("-readiness_score")
+    qs = _exclude_test_accounts(
+        RoleProfile.objects.select_related("user")
+    ).order_by("-readiness_score")
     role = request.query_params.get("role")
     track = request.query_params.get("track")
     tier = request.query_params.get("tier")
@@ -118,7 +145,8 @@ class AdminOverviewView(BaseAPIView):
     permission_classes = [IsAdminUser]
 
     def get(self, request):
-        profiles = RoleProfile.objects.all()
+        # H4: exclude test-harness accounts so counts + fraud reflect real users.
+        profiles = _exclude_test_accounts(RoleProfile.objects.all())
         by_role = dict(
             profiles.values("role").annotate(n=Count("id")).values_list("role", "n")
         )
@@ -128,7 +156,11 @@ class AdminOverviewView(BaseAPIView):
             .values_list("tier", "n")
         )
         total = profiles.count()
-        verified = User.objects.filter(is_verify=True, role_profile__isnull=False).count()
+        verified = _exclude_test_accounts(
+            User.objects.filter(is_verify=True, role_profile__isnull=False),
+            email_field="email",
+        ).count()
+        _test_ids = _test_account_user_ids()
         landing_qs = AnalyticsEvent.objects.filter(name="landing_view")
         # UTM attribution: utm_source captured in landing_view props.
         utm = {}
@@ -154,7 +186,9 @@ class AdminOverviewView(BaseAPIView):
                     "pending_reviews": UserTask.objects.filter(
                         status=UserTask.PENDING
                     ).count(),
-                    "fraud_flags": AuditLog.objects.filter(action="fraud_flag").count(),
+                    "fraud_flags": AuditLog.objects.filter(action="fraud_flag")
+                    .exclude(target_id__in=[str(i) for i in _test_ids])
+                    .count(),
                 },
                 "by_role": by_role,
                 "tiers": {t: tiers.get(t, 0) for t in WhitelistEntry.TIER_ORDER},

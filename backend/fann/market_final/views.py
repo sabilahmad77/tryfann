@@ -381,8 +381,14 @@ class KYCVerificationView(BaseAPIView, CreateAPIView):
 
             reward_data = serializer.save()
             return self.send_success_response(data=reward_data)
-        except Exception as e:
-            return self.send_bad_request_response(message=str(e))
+        except Exception:
+            # Don't leak raw interpreter strings (audit hardening).
+            import logging
+
+            logging.getLogger(__name__).exception("kyc submission failed")
+            return self.send_bad_request_response(
+                message="We couldn't process your KYC submission. Please try again."
+            )
 
 
 class UserRewardView(BaseAPIView, CreateAPIView):
@@ -400,8 +406,15 @@ class UserRewardView(BaseAPIView, CreateAPIView):
 
             reward_data = serializer.save()
             return self.send_success_response(data=reward_data)
-        except Exception as e:
-            return self.send_bad_request_response(message=str(e))
+        except Exception:
+            # H3: never surface raw interpreter strings to the client. Log the
+            # real error server-side; return a generic typed message.
+            import logging
+
+            logging.getLogger(__name__).exception("reward setup failed")
+            return self.send_bad_request_response(
+                message="We couldn't save your reward preferences. Please try again."
+            )
 
 
 class GETUserDetailsView(BaseAPIView, RetrieveAPIView):
