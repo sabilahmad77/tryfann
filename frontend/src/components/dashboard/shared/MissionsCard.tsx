@@ -185,7 +185,7 @@ function MissionRow({ task }: { task: QualificationTask }) {
               value={link}
               onChange={(e) => setLink(e.target.value)}
               placeholder={t.linkPlaceholder}
-              className="min-w-0 flex-1 rounded-lg border border-hairline bg-[#0B0B0D] px-3 py-2 text-sm text-white outline-none focus:border-[#C9A84C]"
+              className="min-h-11 min-w-0 flex-1 rounded-lg border border-hairline bg-[#0B0B0D] px-3 py-2 text-sm text-white outline-none focus:border-[#C9A84C]"
             />
           )}
           <button

@@ -200,7 +200,7 @@ export function SignUp({
       leftPanel: {
         welcomeTitle: "Welcome to the Future of Art",
         welcomeDesc:
-          "Join a verified community where authenticated fine art meets digital innovation.",
+          "Join a verified community where authenticated physical art meets trusted provenance.",
         features: [
           {
             icon: Shield,

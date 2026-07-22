@@ -46,7 +46,7 @@ const faqContent = {
       {
         question: "Why FANN?",
         answer: {
-          intro: "FANN isn't just a platform; it's a movement. Combining artistic integrity with digital innovation, FANN gives you a premium art experience designed to empower, connect, and elevate. Here's why you'll love being part of this ecosystem:",
+          intro: "FANN isn't just a platform; it's a movement. Combining artistic integrity with trusted provenance, FANN gives you a premium art experience designed to empower, connect, and elevate. Here's why you'll love being part of this ecosystem:",
           benefits: [
             {
               title: "Authenticate & Elevate:",
@@ -254,7 +254,7 @@ const faqContent = {
       {
         question: "لماذا FANN؟",
         answer: {
-          intro: "FANN ليست مجرد منصة؛ إنها حركة. بدمج النزاهة الفنية مع الابتكار الرقمي، تمنحك FANN تجربة فنية مميزة مصممة لتمكينك وربطك ورفعك. إليك لماذا ستحب أن تكون جزءًا من هذا النظام البيئي:",
+          intro: "FANN ليست مجرد منصة؛ إنها حركة. بدمج النزاهة الفنية مع المصداقية الموثوقة، تمنحك FANN تجربة فنية مميزة مصممة لتمكينك وربطك ورفعك. إليك لماذا ستحب أن تكون جزءًا من هذا النظام البيئي:",
           benefits: [
             {
               title: "المصادقة والارتقاء:",
