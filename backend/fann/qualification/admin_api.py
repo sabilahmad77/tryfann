@@ -362,6 +362,29 @@ class AdminPendingTasksView(BaseAPIView):
         )
 
 
+def _notify_review_outcome(user, kind, decision, reason):
+    """P1-c: best-effort email to the applicant on an admin decision. Never
+    blocks the decision; failures are logged only."""
+    try:
+        from django.core.mail import send_mail
+
+        verb = "approved" if decision == "approve" else "needs changes"
+        body = f"Your {kind} was {verb}."
+        if decision == "reject" and reason:
+            body += f"\n\nReason: {reason}"
+        send_mail(
+            subject=f"TryFANN — your {kind} update",
+            message=body,
+            from_email=None,
+            recipient_list=[user.email],
+            fail_silently=True,
+        )
+    except Exception:  # noqa: BLE001
+        import logging
+
+        logging.getLogger(__name__).warning("review notify failed", exc_info=True)
+
+
 class AdminReviewTaskView(BaseAPIView):
     # ADM-01: moderation decision (approve/reject a submission) → superuser only.
     permission_classes = [IsStaffSuperuser]
@@ -372,12 +395,27 @@ class AdminReviewTaskView(BaseAPIView):
         except UserTask.DoesNotExist:
             return self.send_bad_request_response(message="Unknown submission.")
         decision = (request.data or {}).get("decision")
+        reason = ((request.data or {}).get("reason") or "").strip()
+        # P1-c: a rejection must always carry a reason (fairness + audit trail).
+        if decision == "reject" and not reason:
+            return self.send_bad_request_response(
+                message="A reason is required to reject a submission."
+            )
         if decision == "approve":
             ut = services.approve_user_task(ut, reviewer=request.user)
         elif decision == "reject":
             ut = services.reject_user_task(ut, reviewer=request.user)
         else:
             return self.send_bad_request_response(message="Unknown decision.")
+        # P1-c: log the decision with reviewer + reason + timestamp, notify user.
+        AuditLog.objects.create(
+            actor=request.user,
+            action=f"task_{decision}",
+            target_type="user_task",
+            target_id=str(ut.pk),
+            metadata={"user": ut.user_id, "reason": reason, "task": ut.task_id},
+        )
+        _notify_review_outcome(ut.user, "task submission", decision, reason)
         return self.send_success_response(data={"id": ut.id, "status": ut.status})
 
 
@@ -455,6 +493,12 @@ class AdminReviewKYCView(BaseAPIView):
         except KYCVerification.DoesNotExist:
             return self.send_bad_request_response(message="Unknown KYC submission.")
         decision = (request.data or {}).get("decision")
+        reason = ((request.data or {}).get("reason") or "").strip()
+        # P1-c: a KYC rejection must always carry a reason.
+        if decision == "reject" and not reason:
+            return self.send_bad_request_response(
+                message="A reason is required to reject a KYC submission."
+            )
         if decision == "approve":
             kyc.status = "Approved"
             kyc.is_kyc_completed = True
@@ -470,8 +514,9 @@ class AdminReviewKYCView(BaseAPIView):
             action=f"kyc_{decision}",
             target_type="kyc",
             target_id=str(kyc.pk),
-            metadata={"user": kyc.user_id},
+            metadata={"user": kyc.user_id, "reason": reason},
         )
+        _notify_review_outcome(kyc.user, "identity verification", decision, reason)
         return self.send_success_response(
             data={"id": kyc.id, "status": kyc.status}
         )
