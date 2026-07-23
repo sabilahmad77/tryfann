@@ -3,3 +3,11 @@ DB_USER=myuser
 DB_PASSWORD=newpassword
 DB_HOST=localhost
 DB_PORT=5432
+
+# P1-e — private encrypted media (KYC docs) on S3/R2. Leave blank to use local
+# storage (dev/staging). Set these on Render to activate S3 (end-register item D).
+AWS_STORAGE_BUCKET_NAME=
+AWS_ACCESS_KEY_ID=
+AWS_SECRET_ACCESS_KEY=
+AWS_S3_REGION_NAME=auto
+AWS_S3_ENDPOINT_URL=          # e.g. https://<accountid>.r2.cloudflarestorage.com for Cloudflare R2

@@ -63,6 +63,25 @@ STORAGES = {
         "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"
     },
 }
+
+# --- P1-e: private, encrypted media (KYC docs) on S3/R2 ---
+# Render's local disk is EPHEMERAL, so uploaded KYC files vanish on redeploy.
+# When AWS_STORAGE_BUCKET_NAME is provided, route uploads to S3/R2 with a
+# PRIVATE ACL (no public URLs), server-side encryption, and signed URLs. Until
+# the bucket + creds are provisioned (end-register item D), it safely stays on
+# local storage so the app still boots.
+if _env("AWS_STORAGE_BUCKET_NAME"):
+    AWS_STORAGE_BUCKET_NAME = _env("AWS_STORAGE_BUCKET_NAME")
+    AWS_ACCESS_KEY_ID = _env("AWS_ACCESS_KEY_ID")
+    AWS_SECRET_ACCESS_KEY = _env("AWS_SECRET_ACCESS_KEY")
+    AWS_S3_REGION_NAME = _env("AWS_S3_REGION_NAME", "auto")
+    AWS_S3_ENDPOINT_URL = _env("AWS_S3_ENDPOINT_URL")  # set for Cloudflare R2
+    AWS_DEFAULT_ACL = "private"          # never publicly readable
+    AWS_QUERYSTRING_AUTH = True          # access only via short-lived signed URLs
+    AWS_QUERYSTRING_EXPIRE = int(_env("AWS_QUERYSTRING_EXPIRE", "300"))
+    AWS_S3_OBJECT_PARAMETERS = {"ServerSideEncryption": "AES256"}
+    AWS_S3_FILE_OVERWRITE = False
+    STORAGES["default"] = {"BACKEND": "storages.backends.s3.S3Storage"}
 _mw = list(MIDDLEWARE)  # noqa: F405
 if "whitenoise.middleware.WhiteNoiseMiddleware" not in _mw:
     try:

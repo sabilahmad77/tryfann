@@ -25,3 +25,4 @@ dj-database-url==2.1.0
 psycopg2-binary==2.9.9   # used only when DATABASE_URL is Postgres (next phase)
 django-anymail[resend]==11.0.1   # Resend transactional email over HTTPS (Render blocks SMTP ports)
 google-auth==2.29.0   # verify Google Sign-In ID tokens server-side
+django-storages[boto3]==1.14.4   # P1-e: private, encrypted S3/R2 media (KYC docs) — active only when AWS_STORAGE_BUCKET_NAME is set
