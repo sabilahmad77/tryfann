@@ -588,22 +588,33 @@ class UserIntersetSerializer(serializers.Serializer):
     geographic_interset = serializers.JSONField(required=False)
     preferred_time_periods = serializers.JSONField(required=False)
     price_interset = serializers.CharField(required=True)
+    # P1-6 — additional collector-profiling dimensions (all optional so the
+    # existing flow keeps working; a complete set earns a queue boost).
+    mediums = serializers.JSONField(required=False)
+    preferred_spaces = serializers.JSONField(required=False)
+    buying_frequency = serializers.CharField(required=False, allow_blank=True)
 
     def create(self, validated_data):
         with transaction.atomic():
             request_user = self.context.get("request_user")
+            # Only overwrite the new fields when the client actually sent them,
+            # so a legacy 4-field POST doesn't wipe an existing rich profile.
+            defaults = {
+                "art_style": validated_data.get("art_style", []),
+                "geographic_interset": validated_data.get("geographic_interset", []),
+                "preferred_time_periods": validated_data.get(
+                    "preferred_time_periods", []
+                ),
+                "price_interset": validated_data.get("price_interset"),
+            }
+            if "mediums" in validated_data:
+                defaults["mediums"] = validated_data.get("mediums") or []
+            if "preferred_spaces" in validated_data:
+                defaults["preferred_spaces"] = validated_data.get("preferred_spaces") or []
+            if "buying_frequency" in validated_data:
+                defaults["buying_frequency"] = validated_data.get("buying_frequency") or ""
             interset_setup, created = IntersetReward.objects.update_or_create(
-                user=request_user,
-                defaults={
-                    "art_style": validated_data.get("art_style", []),
-                    "geographic_interset": validated_data.get(
-                        "geographic_interset", []
-                    ),
-                    "preferred_time_periods": validated_data.get(
-                        "preferred_time_periods", []
-                    ),
-                    "price_interset": validated_data.get("price_interset"),
-                },
+                user=request_user, defaults=defaults,
             )
 
             request_user.profile_step = 3
@@ -615,6 +626,9 @@ class UserIntersetSerializer(serializers.Serializer):
                 "geographic_interset": interset_setup.geographic_interset,
                 "preferred_time_periods": interset_setup.preferred_time_periods,
                 "price_interset": interset_setup.price_interset,
+                "mediums": interset_setup.mediums,
+                "preferred_spaces": interset_setup.preferred_spaces,
+                "buying_frequency": interset_setup.buying_frequency,
                 "user": UserFinalMarketSerializer(interset_setup.user).data,
             }
             return interset_data

@@ -4,7 +4,10 @@ from fann.qualification.admin_api import (
     AdminApplicantActionView,
     AdminApplicantsCSVView,
     AdminApplicantsView,
+    AdminCollectorSegmentsView,
     AdminContentView,
+    AdminCuratorInvitationView,
+    AdminFoundingCapView,
     AdminFraudReviewView,
     AdminOverviewView,
     AdminPendingKYCView,
@@ -12,6 +15,7 @@ from fann.qualification.admin_api import (
     AdminReferralTreeView,
     AdminReviewKYCView,
     AdminReviewTaskView,
+    AdminWaitlistStatusView,
 )
 from fann.qualification.views import (
     AnalyticsEventView,
@@ -19,6 +23,9 @@ from fann.qualification.views import (
     ConciergeRequestView,
     ConsentView,
     ConsentConfirmView,
+    CuratorInvitationAcceptView,
+    FoundingStatusView,
+    MeErasureView,
     MeView,
     MeDashboardView,
     MeArtworksView,
@@ -51,11 +58,36 @@ urlpatterns = [
         AnalyticsEventView.as_view(),
         name="qualification-analytics-events",
     ),
-    # --- P1-d GDPR consent ---
+    # --- P1-d GDPR consent + Enh-3 self-service erasure ---
     path("consent", ConsentView.as_view(), name="qualification-consent"),
     path("consent/confirm", ConsentConfirmView.as_view(), name="qualification-consent-confirm"),
+    path("me/erase", MeErasureView.as_view(), name="qualification-me-erase"),
+    # --- P1-11/P1-12 founding tiers, caps + waitlist status (user-facing) ---
+    path("founding/status", FoundingStatusView.as_view(), name="qualification-founding-status"),
+    # --- P1-9 curator invitation accept (authenticated) ---
+    path(
+        "curator-invitations/accept",
+        CuratorInvitationAcceptView.as_view(),
+        name="qualification-curator-accept",
+    ),
     # --- Admin CRM (staff-only) ---
     path("admin/fraud-review", AdminFraudReviewView.as_view(), name="crm-fraud-review"),
+    path(
+        "admin/curator-invitations",
+        AdminCuratorInvitationView.as_view(),
+        name="crm-curator-invitations",
+    ),
+    path("admin/founding-caps", AdminFoundingCapView.as_view(), name="crm-founding-caps"),
+    path(
+        "admin/waitlist-status",
+        AdminWaitlistStatusView.as_view(),
+        name="crm-waitlist-status",
+    ),
+    path(
+        "admin/collector-segments",
+        AdminCollectorSegmentsView.as_view(),
+        name="crm-collector-segments",
+    ),
     path("admin/overview", AdminOverviewView.as_view(), name="crm-overview"),
     path("admin/applicants", AdminApplicantsView.as_view(), name="crm-applicants"),
     path(

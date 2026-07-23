@@ -31,6 +31,7 @@ SIGNUP_POINTS = 20
 KYC_POINTS = 30
 REFERRAL_POINTS = 25
 REFERRAL_MIN_COMPLETION = 50  # referee completion % required before crediting
+COLLECTOR_PREF_BOOST = 15  # P1-6: one-time boost for a complete preference profile
 
 
 def track_for_role(role):
@@ -179,6 +180,12 @@ def credit_referral(referee):
         name="referral_converted",
         props={"referee": referee.pk, "points": REFERRAL_POINTS},
     )
+    # P1-12: a verified referral improves the referrer's readiness, which can
+    # move their waitlist rank — reflect that truthfully.
+    try:
+        recompute_positions()
+    except Exception:
+        logger.exception("recompute_positions failed after referral credit")
     return credit
 
 
@@ -402,6 +409,126 @@ def readiness_delta_for_task_completion(user):
     per = scoring.TASK_PER
     before = min(cap, max(approved - 1, 0) * per)
     return min(cap, approved * per) - before
+
+
+def boost_for_collector_preferences(user):
+    """P1-6 — reward a COMPLETE collector preference profile with a queue boost.
+
+    When a collector has filled every profiling dimension (mediums, styles,
+    price band, spaces, buying frequency) they earn a one-time points boost
+    (deduped) that lifts readiness and therefore waitlist rank — a real
+    incentive to give us segmentation-quality data. Idempotent + best-effort.
+    """
+    from fann.users.models import IntersetReward
+
+    try:
+        ir = IntersetReward.objects.filter(user=user).order_by("-id").first()
+        if not ir:
+            return None
+        complete = bool(
+            (ir.mediums or [])
+            and (ir.art_style or [])
+            and (ir.price_interset or "")
+            and (ir.preferred_spaces or [])
+            and (ir.buying_frequency or "")
+        )
+        if not complete:
+            return None
+        entry = award_points(
+            user,
+            COLLECTOR_PREF_BOOST,
+            "collector_preferences_complete",
+            dedupe_key=f"pref_complete:{user.pk}",
+            source="preferences",
+            metadata={"boost": COLLECTOR_PREF_BOOST},
+        )
+        if entry:  # first time only — recompute standing + rank
+            recompute(user)
+            recompute_positions()
+        return entry
+    except Exception:
+        logger.exception("boost_for_collector_preferences failed user=%s", getattr(user, "pk", None))
+        return None
+
+
+def recompute_positions():
+    """P1-12 — recompute waitlist rank across all still-waiting applicants.
+
+    Rank = order by readiness score (desc), then signup time (asc), among users
+    whose application isn't yet approved/rejected. Called after events that can
+    change standing (e.g. a verified referral). Bounded to pre-launch scale.
+    """
+    from fann.qualification.models import RoleProfile, WhitelistEntry
+
+    entries = list(
+        WhitelistEntry.objects.exclude(
+            application_status__in=[WhitelistEntry.APPROVED, WhitelistEntry.REJECTED]
+        ).select_related("user")
+    )
+    scores = dict(
+        RoleProfile.objects.values_list("user_id", "readiness_score")
+    )
+    entries.sort(
+        key=lambda e: (-int(scores.get(e.user_id, 0)), e.created_at or timezone.now())
+    )
+    for rank, e in enumerate(entries, start=1):
+        if e.position != rank:
+            WhitelistEntry.objects.filter(pk=e.pk).update(position=rank)
+
+
+def transition_waitlist_status(user, new_status, actor=None, reason="", notify=True):
+    """P1-12 — move a user's application status, logging every transition.
+
+    Returns (entry, changed). A change writes an AuditLog
+    (action="waitlist_status_change", from/to/actor/reason) and optionally
+    emails the user. No-op when the status is unchanged or invalid.
+    """
+    from fann.qualification.models import AuditLog, WhitelistEntry
+
+    ensure_qualification(user)
+    entry, _ = WhitelistEntry.objects.get_or_create(user=user)
+    valid = {s for s, _ in WhitelistEntry.STATUS_CHOICES}
+    if new_status not in valid or entry.application_status == new_status:
+        return entry, False
+    old = entry.application_status
+    WhitelistEntry.objects.filter(pk=entry.pk).update(
+        application_status=new_status, status_updated_at=timezone.now()
+    )
+    entry.application_status = new_status
+    AuditLog.objects.create(
+        actor=actor,
+        action="waitlist_status_change",
+        target_type="user",
+        target_id=str(user.pk),
+        metadata={"from": old, "to": new_status, "reason": reason or ""},
+    )
+    if notify:
+        _notify_status_change(user, old, new_status)
+    return entry, True
+
+
+def _notify_status_change(user, old_status, new_status):
+    """P1-12 — email the applicant when their application status changes."""
+    from django.core.mail import send_mail
+
+    from fann.qualification.models import WhitelistEntry
+
+    labels = dict(WhitelistEntry.STATUS_CHOICES)
+    try:
+        send_mail(
+            subject=f"FANN: your application is now {labels.get(new_status, new_status)}",
+            message=(
+                f"Your TryFANN application status changed from "
+                f"{labels.get(old_status, old_status)} to "
+                f"{labels.get(new_status, new_status)}.\n\n"
+                "Sign in to see the details: http://localhost:3000/dashboard"
+            ),
+            from_email=None,  # DEFAULT_FROM_EMAIL
+            recipient_list=[user.email],
+            fail_silently=True,
+        )
+    except Exception:
+        logger.exception("status-change email failed for user=%s", user.pk)
 
 
 def _notify_tier_change(user, old_tier, new_tier):

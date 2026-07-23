@@ -8,6 +8,7 @@ import { ActivityCard } from "@/components/dashboard/shared/ActivityCard";
 import { ConciergePathCard } from "@/components/dashboard/shared/ConciergePathCard";
 import { DashboardLayout } from "@/components/dashboard/shared/DashboardLayout";
 import { DashboardWelcome } from "@/components/dashboard/shared/DashboardWelcome";
+import { FoundingStatusCard } from "@/components/dashboard/shared/FoundingStatusCard";
 import { MissionsCard } from "@/components/dashboard/shared/MissionsCard";
 import { AnnouncementsCard } from "@/components/dashboard/shared/AnnouncementsCard";
 import { NextActionCard } from "@/components/dashboard/shared/NextActionCard";
@@ -182,6 +183,7 @@ export function DashboardPage() {
           ONE next action -> concierge path (top tier) -> missions -> portfolio
           -> referral (quality) -> activity. */}
       <ReadinessCard showLedger={false} />
+      <FoundingStatusCard />
       <AnnouncementsCard />
       <NextActionCard />
       <ConciergePathCard />

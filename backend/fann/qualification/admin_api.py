@@ -682,3 +682,218 @@ class AdminFraudReviewView(BaseAPIView):
             metadata={"flag_id": flag.id, "resolution": resolution, "reason": reason},
         )
         return self.send_success_response(data={"flag_id": flag.id, "resolution": resolution})
+
+
+class AdminCuratorInvitationView(BaseAPIView):
+    """P1-9 — issue / list / revoke curator invitations (superuser only).
+
+    POST issues a single-use, expiring token; DELETE-style POST with
+    ``action=revoke`` invalidates an unaccepted invite. Every action is logged.
+    """
+
+    permission_classes = [IsStaffSuperuser]
+
+    def get(self, request):
+        from fann.qualification.models import CuratorInvitation
+
+        rows = []
+        for inv in CuratorInvitation.objects.all()[:200]:
+            rows.append({
+                "id": inv.id,
+                "email": inv.email,
+                "note": inv.note,
+                "token": inv.token,
+                "expires_at": inv.expires_at.isoformat() if inv.expires_at else None,
+                "revoked": inv.revoked,
+                "accepted": inv.is_accepted,
+                "accepted_by": inv.accepted_by_id,
+                "valid": inv.is_valid(),
+                "created_at": inv.created_at.isoformat() if inv.created_at else None,
+            })
+        return self.send_success_response(data={"invitations": rows})
+
+    def post(self, request):
+        import secrets
+
+        from fann.qualification.models import AuditLog, CuratorInvitation
+
+        body = request.data if isinstance(request.data, dict) else {}
+        action = str(body.get("action") or "issue").lower()
+
+        if action == "revoke":
+            inv = CuratorInvitation.objects.filter(pk=body.get("id")).first()
+            if not inv:
+                return self.send_bad_request_response(message="Unknown invitation.")
+            if inv.is_accepted:
+                return self.send_bad_request_response(
+                    message="Already accepted — cannot revoke."
+                )
+            if not inv.revoked:
+                inv.revoked = True
+                inv.save(update_fields=["revoked"])
+            AuditLog.objects.create(
+                actor=request.user, action="curator_invitation_revoke",
+                target_type="curator_invitation", target_id=str(inv.pk), metadata={},
+            )
+            return self.send_success_response(data={"id": inv.id, "revoked": True})
+
+        # default: issue
+        try:
+            days = int(body.get("expires_in_days") or 14)
+        except (TypeError, ValueError):
+            days = 14
+        days = max(1, min(days, 90))
+        inv = CuratorInvitation.objects.create(
+            token=secrets.token_urlsafe(24),
+            email=str(body.get("email") or "")[:255],
+            note=str(body.get("note") or "")[:255],
+            issued_by=request.user,
+            expires_at=timezone.now() + timezone.timedelta(days=days),
+        )
+        AuditLog.objects.create(
+            actor=request.user, action="curator_invitation_issue",
+            target_type="curator_invitation", target_id=str(inv.pk),
+            metadata={"email": inv.email, "expires_in_days": days},
+        )
+        return self.send_success_response(data={
+            "id": inv.id, "token": inv.token, "email": inv.email,
+            "expires_at": inv.expires_at.isoformat(),
+        })
+
+
+class AdminFoundingCapView(BaseAPIView):
+    """P1-11 — view and adjust the real per-tier founding caps (superuser only).
+
+    GET returns each tier's cap + the TRUE current fill (live member count).
+    POST sets a cap (0 = uncapped). Counters are always computed from real
+    rows — there is no fabricated scarcity figure anywhere in the system.
+    """
+
+    permission_classes = [IsStaffSuperuser]
+
+    def get(self, request):
+        from django.db.models import Count
+
+        from fann.qualification.models import FoundingTierCap
+
+        counts = {
+            row["tier"]: row["n"]
+            for row in WhitelistEntry.objects.values("tier").annotate(n=Count("id"))
+        }
+        caps = {c.tier: c for c in FoundingTierCap.objects.all()}
+        rows = []
+        for tier, label in WhitelistEntry.TIER_CHOICES:
+            cap_obj = caps.get(tier)
+            cap = cap_obj.cap if cap_obj else 0
+            filled = int(counts.get(tier, 0))
+            rows.append({
+                "tier": tier, "label": label, "cap": cap, "filled": filled,
+                "remaining": (max(0, cap - filled) if cap else None),
+                "note": cap_obj.note if cap_obj else "",
+            })
+        return self.send_success_response(data={"tiers": rows})
+
+    def post(self, request):
+        from fann.qualification.models import AuditLog, FoundingTierCap
+
+        body = request.data if isinstance(request.data, dict) else {}
+        tier = body.get("tier")
+        if tier not in dict(WhitelistEntry.TIER_CHOICES):
+            return self.send_bad_request_response(message="Unknown tier.")
+        try:
+            cap = int(body.get("cap"))
+        except (TypeError, ValueError):
+            return self.send_bad_request_response(message="cap must be an integer (0 = uncapped).")
+        if cap < 0:
+            return self.send_bad_request_response(message="cap cannot be negative.")
+        obj, _ = FoundingTierCap.objects.update_or_create(
+            tier=tier,
+            defaults={
+                "cap": cap,
+                "note": str(body.get("note") or "")[:255],
+                "updated_by": request.user,
+            },
+        )
+        AuditLog.objects.create(
+            actor=request.user, action="founding_cap_set",
+            target_type="founding_tier", target_id=tier, metadata={"cap": cap},
+        )
+        return self.send_success_response(data={"tier": tier, "cap": obj.cap})
+
+
+class AdminWaitlistStatusView(BaseAPIView):
+    """P1-12 — operator override of an applicant's status (superuser only).
+
+    Transitions are logged (via services.transition_waitlist_status) with the
+    reviewer + reason and notify the applicant.
+    """
+
+    permission_classes = [IsStaffSuperuser]
+
+    def post(self, request):
+        from fann.qualification.models import WhitelistEntry
+
+        body = request.data if isinstance(request.data, dict) else {}
+        user = User.objects.filter(pk=body.get("user_id")).first()
+        if not user:
+            return self.send_bad_request_response(message="Unknown user.")
+        new_status = body.get("status")
+        if new_status not in dict(WhitelistEntry.STATUS_CHOICES):
+            return self.send_bad_request_response(message="Invalid status.")
+        reason = str(body.get("reason") or "").strip()
+        if new_status == WhitelistEntry.REJECTED and not reason:
+            return self.send_bad_request_response(
+                message="A reason is required to reject an application."
+            )
+        entry, changed = services.transition_waitlist_status(
+            user, new_status, actor=request.user, reason=reason
+        )
+        return self.send_success_response(data={
+            "user_id": user.id, "application_status": entry.application_status,
+            "changed": changed,
+        })
+
+
+class AdminCollectorSegmentsView(BaseAPIView):
+    """P1-6 — collector preference segmentation (superuser only).
+
+    Aggregates the stored collector preferences (mediums / styles / price band /
+    spaces / buying frequency) into counts so the team can segment for concierge
+    outreach. Queryable, real data — no fabricated audience sizes.
+    """
+
+    permission_classes = [IsStaffSuperuser]
+
+    def get(self, request):
+        from collections import Counter
+
+        from fann.users.models import IntersetReward
+
+        test_ids = _test_account_user_ids()
+        rows = IntersetReward.objects.exclude(user_id__in=test_ids).values(
+            "art_style", "mediums", "preferred_spaces", "price_interset",
+            "buying_frequency",
+        )
+        mediums, styles, spaces = Counter(), Counter(), Counter()
+        price, freq = Counter(), Counter()
+        total = 0
+        for r in rows:
+            total += 1
+            for m in (r.get("mediums") or []):
+                mediums[str(m)] += 1
+            for s in (r.get("art_style") or []):
+                styles[str(s)] += 1
+            for sp in (r.get("preferred_spaces") or []):
+                spaces[str(sp)] += 1
+            if r.get("price_interset"):
+                price[str(r["price_interset"])] += 1
+            if r.get("buying_frequency"):
+                freq[str(r["buying_frequency"])] += 1
+        return self.send_success_response(data={
+            "total_profiles": total,
+            "mediums": dict(mediums),
+            "styles": dict(styles),
+            "spaces": dict(spaces),
+            "price_band": dict(price),
+            "buying_frequency": dict(freq),
+        })

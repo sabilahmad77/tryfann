@@ -93,6 +93,35 @@ export interface CompleteTaskResponse {
   data: { task: string; status: string; earned: number; me: QualificationMe };
 }
 
+// P1-11 / P1-12 — founding-tier capacity + the caller's standing. `cap` of 0
+// means uncapped (remaining is null); numbers are computed from real member
+// counts server-side — never fabricated scarcity.
+export interface FoundingTier {
+  tier: string;
+  label: string;
+  cap: number;
+  filled: number;
+  remaining: number | null;
+  is_full: boolean;
+}
+
+export interface FoundingStatusResponse {
+  success: boolean;
+  status_code: number;
+  message: Record<string, unknown> | string;
+  data: {
+    tiers: FoundingTier[];
+    me?: {
+      tier: string;
+      tier_label: string;
+      application_status: string;
+      status_label: string;
+      position: number | null;
+      status_updated_at: string | null;
+    };
+  };
+}
+
 export const qualificationApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getQualificationMe: builder.query<QualificationMeResponse, void>({
@@ -134,6 +163,12 @@ export const qualificationApi = baseApi.injectEndpoints({
       // Refresh /me (points, score, tier) and the task list together.
       invalidatesTags: ["User"],
     }),
+    // P1-11 / P1-12 — truthful founding-tier capacity + the caller's own
+    // standing (tier, application status, waitlist position).
+    getFoundingStatus: builder.query<FoundingStatusResponse, void>({
+      query: () => ({ url: "/qualification/founding/status", method: "GET" }),
+      providesTags: ["User"],
+    }),
   }),
   overrideExisting: false,
 });
@@ -144,4 +179,5 @@ export const {
   useTrackEventMutation,
   useGetMyTasksQuery,
   useCompleteTaskMutation,
+  useGetFoundingStatusQuery,
 } = qualificationApi;

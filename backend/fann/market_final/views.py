@@ -367,6 +367,14 @@ class UserInterestView(BaseAPIView, CreateAPIView):
                 return self.send_bad_request_response(message=serializer.errors)
 
             interset_data = serializer.save()
+            # P1-6: reward a complete collector preference profile with a
+            # one-time queue boost (idempotent, best-effort).
+            try:
+                from fann.qualification import services as _q_services
+
+                _q_services.boost_for_collector_preferences(request.user)
+            except Exception:
+                pass
             return self.send_success_response(data=interset_data)
         except Exception as e:
             return self.send_bad_request_response(message=str(e))
@@ -1348,6 +1356,21 @@ class VerifyEmailView(BaseAPIView):
             AnalyticsEvent.objects.create(
                 user=user, name="email_verified", props={"role": user.role}
             )
+            # P1-12: an email-verified applicant moves out of "pending" into
+            # "verified" (logged transition). Best-effort — never block verify.
+            try:
+                from fann.qualification import services as _q_services
+                from fann.qualification.models import WhitelistEntry as _WE
+
+                _q_services.transition_waitlist_status(
+                    user, _WE.VERIFIED, reason="email_verified", notify=False
+                )
+            except Exception:
+                import logging
+
+                logging.getLogger(__name__).exception(
+                    "waitlist verified-transition failed for user=%s", user.pk
+                )
         UserVerifications.objects.filter(user=user).delete()
         return self.send_success_response(
             message="Email already verified." if already else "Email verified successfully.",
