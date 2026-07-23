@@ -6,6 +6,7 @@ import {
   SwitchField,
 } from "@/components/ui/custom-form-elements";
 import { Separator } from "@/components/ui/separator";
+import { ConfirmationDialog } from "@/components/ui/ConfirmationDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useLanguage } from "@/contexts/useLanguage";
 import {
@@ -14,8 +15,13 @@ import {
   useSaveUserSettingsMutation,
   type UserSettingsRequest,
 } from "@/services/api/settingsApi";
+import { useSelfEraseMutation } from "@/services/api/qualificationApi";
 import { updateUser } from "@/store/authSlice";
+import { persistor } from "@/store/store";
+import { ROUTES } from "@/routes/paths";
+import { clearAllAuthState } from "@/utils/auth";
 import { extractErrorMessage } from "@/utils/errorMessages";
+import { useNavigate } from "react-router-dom";
 import {
   Bell,
   Eye,
@@ -53,7 +59,12 @@ const content = {
     confirmPassword: "Confirm Password",
     updateAccount: "Update Account",
     deleteAccount: "Delete Account",
-    deleteWarning: "This action cannot be undone",
+    deleteWarning: "This permanently erases your personal data and deactivates your account. This action cannot be undone.",
+    deleteConfirmTitle: "Delete your account?",
+    deleteConfirmMsg: "This will erase your personal data and sign you out. This cannot be undone.",
+    deleteConfirmCta: "Delete account",
+    deleteCancel: "Cancel",
+    deleteSuccess: "Your account and personal data have been erased.",
     // Notifications
     emailNotifications: "Email Notifications",
     pushNotifications: "Push Notifications",
@@ -111,7 +122,12 @@ const content = {
     confirmPassword: "تأكيد كلمة المرور",
     updateAccount: "تحديث الحساب",
     deleteAccount: "حذف الحساب",
-    deleteWarning: "لا يمكن التراجع عن هذا الإجراء",
+    deleteWarning: "يؤدي هذا إلى محو بياناتك الشخصية نهائياً وتعطيل حسابك. لا يمكن التراجع عن هذا الإجراء.",
+    deleteConfirmTitle: "حذف حسابك؟",
+    deleteConfirmMsg: "سيؤدي هذا إلى محو بياناتك الشخصية وتسجيل خروجك. لا يمكن التراجع عن ذلك.",
+    deleteConfirmCta: "حذف الحساب",
+    deleteCancel: "إلغاء",
+    deleteSuccess: "تم محو حسابك وبياناتك الشخصية.",
     // Notifications
     emailNotifications: "إشعارات البريد الإلكتروني",
     pushNotifications: "الإشعارات الفورية",
@@ -160,6 +176,7 @@ export function SettingsPage() {
   const t = content[language];
   const isRTL = language === "ar";
   const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   // API hooks
   const {
@@ -172,6 +189,24 @@ export function SettingsPage() {
     useSaveUserSettingsMutation();
   const [changePassword, { isLoading: isChangingPassword }] =
     useChangePasswordMutation();
+  // Enh-3 — GDPR self-service erasure.
+  const [selfErase, { isLoading: isErasing }] = useSelfEraseMutation();
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  const handleDeleteAccount = async () => {
+    try {
+      await selfErase().unwrap();
+      toast.success(t.deleteSuccess);
+      setShowDeleteConfirm(false);
+      // Erasure deactivates the account server-side — clear the session and
+      // return to sign-in.
+      await clearAllAuthState(dispatch, persistor, { clearExpiredPage: true });
+      navigate(ROUTES.SIGN_IN);
+    } catch (err) {
+      toast.error(extractErrorMessage(err, language));
+      setShowDeleteConfirm(false);
+    }
+  };
 
   // State for password fields
   const [currentPassword, setCurrentPassword] = useState("");
@@ -546,18 +581,28 @@ export function SettingsPage() {
 
             {/* <Separator className="my-8 bg-[#4e4e4e78]" /> */}
 
-            {/* Delete Account */}
-            {/* <div
+            {/* Delete Account — Enh-3 GDPR self-service erasure */}
+            <div
               className={`p-4 bg-destructive/10 border border-destructive/30 rounded-xl ${
                 isRTL ? "text-right" : "text-left"
               }`}
             >
               <h4 className="text-destructive mb-2">{t.deleteAccount}</h4>
               <p className="text-sm text-[#8A8EA0] mb-4">{t.deleteWarning}</p>
-              <Button variant="destructive" size="sm">
-                {t.deleteAccount}
+              <Button
+                variant="destructive"
+                size="sm"
+                className="min-h-11 cursor-pointer"
+                disabled={isErasing}
+                onClick={() => setShowDeleteConfirm(true)}
+              >
+                {isErasing ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  t.deleteAccount
+                )}
               </Button>
-            </div> */}
+            </div>
           </motion.div>
         </TabsContent>
 
@@ -865,6 +910,19 @@ export function SettingsPage() {
           </motion.div>
         </TabsContent>
       </Tabs>
+
+      {/* Enh-3 — erase confirmation */}
+      <ConfirmationDialog
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={handleDeleteAccount}
+        variant="danger"
+        title={t.deleteConfirmTitle}
+        message={t.deleteConfirmMsg}
+        confirmText={t.deleteConfirmCta}
+        cancelText={t.deleteCancel}
+        isLoading={isErasing}
+      />
     </DashboardLayout>
   );
 }

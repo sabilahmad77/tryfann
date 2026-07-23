@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "motion/react";
 import { Users, Plus, TrendingUp, Award, Mail, Loader2, Lock } from "lucide-react";
+import { ErrorState } from "../../ui/ViewState";
 import { Button } from "../../ui/button";
 import { Avatar, AvatarFallback } from "../../ui/avatar";
 import { Badge } from "../../ui/badge";
@@ -77,6 +78,7 @@ export function ArtistRoster({
     data: artistsData,
     isLoading: isLoadingArtists,
     error: artistsError,
+    refetch: refetchArtists,
   } = useGetArtistRoasterQuery(undefined, { skip: !profileCompleted });
 
   const [createArtist, { isLoading: isCreating }] = useCreateArtistRoasterMutation();
@@ -267,13 +269,14 @@ export function ArtistRoster({
             <Loader2 className="w-6 h-6 text-[#45e3d3] animate-spin" />
           </div>
         ) : artistsError ? (
-          <div className="text-center py-8 text-[#8A8EA0]">
-            <p className="text-sm">
-              {language === "en"
-                ? "Failed to load artists. Showing default data."
-                : "فشل تحميل الفنانين. عرض البيانات الافتراضية."}
-            </p>
-          </div>
+          <ErrorState
+            body={
+              language === "en"
+                ? "We couldn't load your roster. Please try again."
+                : "تعذّر تحميل قائمة فنانيك. حاول مرة أخرى."
+            }
+            onRetry={() => refetchArtists()}
+          />
         ) : artists.length === 0 ? (
           <div className="text-center py-8 text-[#8A8EA0]">
             <p className="text-sm">

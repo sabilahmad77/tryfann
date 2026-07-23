@@ -119,6 +119,12 @@ class SelfErasureTests(TestCase):
         )
         self.assertEqual(r.status_code, 400)
 
+# NOTE: the users app (/users/delete_account/) is NOT mounted in the trimmed
+# production urlconf (core.urls_local → market_final + qualification only), so
+# DeleteUserAccountView's former IDOR is not reachable in prod. The view was
+# still hardened to act on request.user (defensive), but there is no routable
+# HTTP test for it here.
+
 
 # --------------------------------------------------------------------------- #
 # P1-9 — curator invitation

@@ -169,6 +169,18 @@ export const qualificationApi = baseApi.injectEndpoints({
       query: () => ({ url: "/qualification/founding/status", method: "GET" }),
       providesTags: ["User"],
     }),
+    // Enh-3 — GDPR self-service erasure. Confirm-gated on the server
+    // ({"confirm":"ERASE"}); de-identifies + deactivates the caller's account.
+    selfErase: builder.mutation<
+      { success: boolean; message: string | Record<string, unknown> },
+      void
+    >({
+      query: () => ({
+        url: "/qualification/me/erase",
+        method: "POST",
+        body: { confirm: "ERASE" },
+      }),
+    }),
   }),
   overrideExisting: false,
 });
@@ -180,4 +192,5 @@ export const {
   useGetMyTasksQuery,
   useCompleteTaskMutation,
   useGetFoundingStatusQuery,
+  useSelfEraseMutation,
 } = qualificationApi;

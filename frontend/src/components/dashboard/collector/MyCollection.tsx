@@ -24,6 +24,7 @@ import { Button } from "../../ui/button";
 import { ConfirmationDialog } from "../../ui/ConfirmationDialog";
 import { AddArtworkModal, type Artwork } from "./AddArtworkModal";
 import { ProfileLockedState } from "../shared/ProfileLockedState";
+import { ErrorState } from "../../ui/ViewState";
 import { Avatar, AvatarFallback, AvatarImage } from "../../ui/avatar";
 import { getFullImageUrl } from "@/utils/filePreviewHelpers";
 import { ArtworkDetailModal, type ArtworkDetailData } from "@/components/ArtworkDetailModal";
@@ -130,6 +131,7 @@ export function MyCollection({
     data: artworksData,
     isLoading: isLoadingArtworks,
     error: artworksError,
+    refetch: refetchArtworks,
   } = useGetArtworkCollectionQuery(undefined, { skip: !profileCompleted });
 
   const [createArtwork, { isLoading: isCreating }] =
@@ -448,13 +450,14 @@ export function MyCollection({
             <Loader2 className="w-6 h-6 text-[#C59B48] animate-spin" />
           </div>
         ) : artworksError ? (
-          <div className="text-center py-8 text-[#8A8EA0]">
-            <p className="text-sm">
-              {language === "en"
-                ? "Failed to load artworks. Showing default data."
-                : "فشل تحميل الأعمال الفنية. عرض البيانات الافتراضية."}
-            </p>
-          </div>
+          <ErrorState
+            body={
+              language === "en"
+                ? "We couldn't load your collection. Please try again."
+                : "تعذّر تحميل مجموعتك. حاول مرة أخرى."
+            }
+            onRetry={() => refetchArtworks()}
+          />
         ) : artworkList.length === 0 ? (
           <div className="text-center py-8 text-[#8A8EA0]">
             <p className="text-sm">

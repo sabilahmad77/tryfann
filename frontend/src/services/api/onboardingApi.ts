@@ -59,6 +59,11 @@ export interface InterestsRequest {
   geographic_interset: string[];
   preferred_time_periods: string[];
   price_interset: string;
+  // P1-6 — additional collector-profiling dimensions (optional; a complete set
+  // earns a queue boost and powers admin segmentation).
+  mediums?: string[];
+  preferred_spaces?: string[];
+  buying_frequency?: string;
 }
 
 export interface InterestsResponse {
@@ -276,6 +281,14 @@ export const onboardingApi = baseApi.injectEndpoints({
           geographic_interset: data.geographic_interset,
           preferred_time_periods: data.preferred_time_periods,
           price_interset: data.price_interset,
+          // P1-6 — only include when provided so legacy callers are unaffected.
+          ...(data.mediums !== undefined ? { mediums: data.mediums } : {}),
+          ...(data.preferred_spaces !== undefined
+            ? { preferred_spaces: data.preferred_spaces }
+            : {}),
+          ...(data.buying_frequency !== undefined
+            ? { buying_frequency: data.buying_frequency }
+            : {}),
         },
       }),
       invalidatesTags: ["User"],

@@ -928,16 +928,18 @@ class DeleteUserAccountView(BaseAPIView, CreateAPIView):
             if not serializer.is_valid():
                 return self.send_bad_request_response(message=serializer.errors)
             status = request.data.get("delete_account")
-            user_id = request.data.get("user_id")
-            if not user_id:
-                return self.send_bad_request_response(message="user_id is required")
-            user_obj = User.objects.filter(id=user_id).first()
-            if not user_obj:
-                return self.send_bad_request_response(message="user does not exist")
+            # SECURITY: only ever act on the authenticated caller. Never trust a
+            # client-supplied user_id (that was an IDOR — any user could delete
+            # another). For a full GDPR erasure use /api/qualification/me/erase.
+            user_obj = request.user
+            if getattr(user_obj, "is_superuser", False):
+                return self.send_bad_request_response(
+                    message="Admin accounts cannot self-delete."
+                )
             if status is True:
-                # user = request.user
                 user_obj.is_deleted = True
-                user_obj.save()
+                user_obj.is_active = False
+                user_obj.save(update_fields=["is_deleted", "is_active"])
                 return self.send_success_response(
                     message="Account Deleted Successfully"
                 )

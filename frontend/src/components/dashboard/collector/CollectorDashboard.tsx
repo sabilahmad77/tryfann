@@ -19,6 +19,7 @@ import { URLEncoder } from "../shared/URLEncoder";
 import { AddArtwork } from "../artist/AddArtwork";
 import { MyCollection } from "./MyCollection";
 import { MarketInsights } from "./MarketInsights";
+import { CollectingPreferences } from "./CollectingPreferences";
 
 const content = {
   en: {
@@ -114,6 +115,9 @@ export function CollectorDashboard() {
 
       {/* Points ledger / activity */}
       <ActivityCard />
+
+      {/* Collecting preferences (P1-6) — powers queue boost + segmentation */}
+      <CollectingPreferences />
 
       {/* Collection tools (secondary) */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
