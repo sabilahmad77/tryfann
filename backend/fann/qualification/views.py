@@ -324,3 +324,106 @@ class MeRosterView(BaseAPIView):
             qs, many=True, context={"request": request}
         ).data
         return self.send_success_response(data=data)
+
+
+class ConsentView(BaseAPIView):
+    """P1-d — GDPR consent: record, list, and confirm (double opt-in).
+
+    POST records a grant/withdrawal as a new immutable row. EU marketing grants
+    require a double opt-in: the row is stored unconfirmed and a confirmation
+    link is emailed; GET/export returns the provable consent history.
+    """
+
+    permission_classes = [AllowAny]  # consent can be captured pre-signup
+
+    def get(self, request):
+        from fann.qualification.models import ConsentRecord
+
+        qs = ConsentRecord.objects.all()
+        if request.user.is_authenticated:
+            qs = qs.filter(user=request.user)
+        else:
+            sid = request.query_params.get("session_id") or ""
+            qs = qs.filter(session_id=sid) if sid else qs.none()
+        data = list(
+            qs.values(
+                "consent_type", "granted", "version", "double_opt_in_confirmed",
+                "source", "created_at",
+            )[:200]
+        )
+        # This list IS the exportable consent proof (DSAR-ready).
+        return self.send_success_response(data={"consents": data})
+
+    def post(self, request):
+        import secrets
+
+        from fann.qualification.models import ConsentRecord
+
+        body = request.data if isinstance(request.data, dict) else {}
+        ctype = body.get("consent_type")
+        if ctype not in (ConsentRecord.ANALYTICS, ConsentRecord.MARKETING, ConsentRecord.TERMS):
+            return self.send_bad_request_response(message="Invalid consent_type.")
+        granted = bool(body.get("granted"))
+        version = str(body.get("version") or "1.0")
+        # EU marketing grants need a confirmed double opt-in before they count.
+        needs_double = ctype == ConsentRecord.MARKETING and granted
+        token = secrets.token_urlsafe(24) if needs_double else ""
+        rec = ConsentRecord.objects.create(
+            user=request.user if request.user.is_authenticated else None,
+            session_id=str(body.get("session_id") or ""),
+            consent_type=ctype,
+            granted=granted,
+            version=version,
+            double_opt_in_required=needs_double,
+            double_opt_in_confirmed=not needs_double and granted,
+            confirm_token=token,
+            ip=_client_ip(request),  # already anonymized
+            source=str(body.get("source") or "web")[:60],
+        )
+        if needs_double and request.user.is_authenticated:
+            try:
+                from django.core.mail import send_mail
+
+                send_mail(
+                    subject="TryFANN — confirm your email preferences",
+                    message=(
+                        "Please confirm you'd like to receive TryFANN updates by "
+                        f"opening this link:\n\nhttps://www.tryfann.com/consent/confirm?token={token}"
+                    ),
+                    from_email=None,
+                    recipient_list=[request.user.email],
+                    fail_silently=True,
+                )
+            except Exception:  # noqa: BLE001
+                pass
+        return self.send_success_response(
+            data={
+                "id": rec.id,
+                "consent_type": rec.consent_type,
+                "granted": rec.granted,
+                "double_opt_in_required": rec.double_opt_in_required,
+                "double_opt_in_confirmed": rec.double_opt_in_confirmed,
+            }
+        )
+
+
+class ConsentConfirmView(BaseAPIView):
+    """P1-d — confirm an EU marketing double opt-in via the emailed token."""
+
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        from fann.qualification.models import ConsentRecord
+
+        token = (request.data or {}).get("token") or request.query_params.get("token")
+        if not token:
+            return self.send_bad_request_response(message="Missing token.")
+        rec = ConsentRecord.objects.filter(
+            confirm_token=token, double_opt_in_required=True
+        ).first()
+        if not rec:
+            return self.send_bad_request_response(message="Invalid or used token.")
+        rec.double_opt_in_confirmed = True
+        rec.confirm_token = ""
+        rec.save(update_fields=["double_opt_in_confirmed", "confirm_token"])
+        return self.send_success_response(data={"confirmed": True})

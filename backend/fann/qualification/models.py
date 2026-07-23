@@ -178,6 +178,43 @@ class AnalyticsEvent(TimestampMixin):
         return f"AnalyticsEvent<{self.name} u={self.user_id}>"
 
 
+class ConsentRecord(TimestampMixin):
+    """P1-d — GDPR-provable, versioned consent.
+
+    One row per consent decision (grant OR withdrawal) so the full history is
+    auditable. `double_opt_in_confirmed` gates EU marketing until the emailed
+    confirmation link is clicked. Rows are immutable history — a withdrawal is
+    a NEW row with granted=False, not an edit.
+    """
+
+    ANALYTICS = "analytics"
+    MARKETING = "marketing"
+    TERMS = "terms"
+    TYPE_CHOICES = [(ANALYTICS, "Analytics"), (MARKETING, "Marketing"), (TERMS, "Terms")]
+
+    user = models.ForeignKey(
+        USER, on_delete=models.CASCADE, null=True, blank=True, related_name="consents"
+    )
+    session_id = models.CharField(max_length=64, blank=True)  # pre-signup consent
+    consent_type = models.CharField(max_length=20, choices=TYPE_CHOICES)
+    version = models.CharField(max_length=20, default="1.0")
+    granted = models.BooleanField(default=False)
+    # EU marketing double opt-in: granted stays unconfirmed until the emailed
+    # link is clicked.
+    double_opt_in_required = models.BooleanField(default=False)
+    double_opt_in_confirmed = models.BooleanField(default=False)
+    confirm_token = models.CharField(max_length=64, blank=True)
+    ip = models.GenericIPAddressField(null=True, blank=True)  # anonymized
+    source = models.CharField(max_length=60, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [models.Index(fields=["consent_type", "created_at"])]
+
+    def __str__(self):
+        return f"ConsentRecord<{self.consent_type} granted={self.granted} u={self.user_id}>"
+
+
 class Task(TimestampMixin):
     """A pre-launch qualification mission (mandate §5 task list).
 

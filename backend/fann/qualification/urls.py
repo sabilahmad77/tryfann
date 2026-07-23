@@ -5,6 +5,7 @@ from fann.qualification.admin_api import (
     AdminApplicantsCSVView,
     AdminApplicantsView,
     AdminContentView,
+    AdminFraudReviewView,
     AdminOverviewView,
     AdminPendingKYCView,
     AdminPendingTasksView,
@@ -16,6 +17,8 @@ from fann.qualification.views import (
     AnalyticsEventView,
     CompleteTaskView,
     ConciergeRequestView,
+    ConsentView,
+    ConsentConfirmView,
     MeView,
     MeDashboardView,
     MeArtworksView,
@@ -48,7 +51,11 @@ urlpatterns = [
         AnalyticsEventView.as_view(),
         name="qualification-analytics-events",
     ),
+    # --- P1-d GDPR consent ---
+    path("consent", ConsentView.as_view(), name="qualification-consent"),
+    path("consent/confirm", ConsentConfirmView.as_view(), name="qualification-consent-confirm"),
     # --- Admin CRM (staff-only) ---
+    path("admin/fraud-review", AdminFraudReviewView.as_view(), name="crm-fraud-review"),
     path("admin/overview", AdminOverviewView.as_view(), name="crm-overview"),
     path("admin/applicants", AdminApplicantsView.as_view(), name="crm-applicants"),
     path(

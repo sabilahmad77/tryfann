@@ -620,3 +620,65 @@ class AdminContentView(BaseAPIView):
         return self.send_bad_request_response(
             message="type must be 'module' or 'announcement'"
         )
+
+
+class AdminFraudReviewView(BaseAPIView):
+    """P1-b — fraud-review queue. Lists auto-flagged referrals/signups and lets
+    a superuser resolve each (void the referral, or dismiss the flag). Every
+    resolution is logged with the reviewer + reason for the audit trail."""
+
+    permission_classes = [IsStaffSuperuser]
+
+    def get(self, request):
+        flags = (
+            AuditLog.objects.filter(action="fraud_flag")
+            .exclude(
+                target_id__in=[str(i) for i in _test_account_user_ids()]
+            )
+            .order_by("-created_at")[:200]
+        )
+        resolved_ids = set(
+            AuditLog.objects.filter(action="fraud_resolved").values_list(
+                "metadata__flag_id", flat=True
+            )
+        )
+        rows = []
+        for f in flags:
+            u = User.objects.filter(pk=f.target_id).values("email", "role").first()
+            rows.append({
+                "flag_id": f.id,
+                "target_type": f.target_type,
+                "target_id": f.target_id,
+                "email": (u or {}).get("email"),
+                "role": (u or {}).get("role"),
+                "reason": (f.metadata or {}).get("reason"),
+                "flagged_at": f.created_at.isoformat() if f.created_at else None,
+                "resolved": f.id in resolved_ids,
+            })
+        return self.send_success_response(data={"flags": rows})
+
+    def post(self, request):
+        body = request.data if isinstance(request.data, dict) else {}
+        flag_id = body.get("flag_id")
+        resolution = body.get("resolution")  # "void" | "dismiss"
+        reason = (body.get("reason") or "").strip()
+        if resolution not in ("void", "dismiss"):
+            return self.send_bad_request_response(message="resolution must be void or dismiss.")
+        if not reason:
+            return self.send_bad_request_response(message="A reason is required to resolve a flag.")
+        flag = AuditLog.objects.filter(pk=flag_id, action="fraud_flag").first()
+        if not flag:
+            return self.send_bad_request_response(message="Unknown flag.")
+        # "void" withholds the reward: soft-void any referral credit for the user.
+        if resolution == "void" and flag.target_id:
+            from fann.qualification.models import ReferralCredit
+
+            ReferralCredit.objects.filter(referee_id=flag.target_id).update(points_awarded=0)
+        AuditLog.objects.create(
+            actor=request.user,
+            action="fraud_resolved",
+            target_type=flag.target_type,
+            target_id=flag.target_id,
+            metadata={"flag_id": flag.id, "resolution": resolution, "reason": reason},
+        )
+        return self.send_success_response(data={"flag_id": flag.id, "resolution": resolution})

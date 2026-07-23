@@ -69,6 +69,23 @@ export function setAnalyticsConsent(granted: boolean): void {
   } catch {
     /* ignore */
   }
+  // P1-d: record the decision server-side as provable, versioned consent.
+  try {
+    const body = JSON.stringify({
+      consent_type: "analytics",
+      granted,
+      session_id: getSessionId(),
+      source: "consent_banner",
+    });
+    void fetch(`${API_BASE}/qualification/consent`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body,
+      keepalive: true,
+    }).catch(() => {});
+  } catch {
+    /* never block on consent logging */
+  }
   if (granted) initGA();
 }
 
