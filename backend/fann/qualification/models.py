@@ -70,10 +70,32 @@ class WhitelistEntry(TimestampMixin):
     # Ordered for comparisons / progress display.
     TIER_ORDER = [WAITLISTED, VERIFIED_MEMBER, PRIORITY_ACCESS, FOUNDERS_CIRCLE]
 
+    # P1-12 — application lifecycle status, tracked separately from `tier`.
+    # `tier` is the standing a user has EARNED; `status` is where their
+    # application SITS in the review pipeline. Every transition is logged
+    # (AuditLog action="waitlist_status_change") and surfaced to the user.
+    PENDING = "pending"
+    UNDER_REVIEW = "under_review"
+    VERIFIED = "verified"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+    STATUS_CHOICES = [
+        (PENDING, "Pending"),
+        (VERIFIED, "Verified"),
+        (UNDER_REVIEW, "Under review"),
+        (APPROVED, "Approved"),
+        (REJECTED, "Rejected"),
+        (WAITLISTED, "Waitlisted"),
+    ]
+
     user = models.OneToOneField(
         USER, on_delete=models.CASCADE, related_name="whitelist_entry"
     )
     tier = models.CharField(max_length=32, choices=TIER_CHOICES, default=WAITLISTED)
+    application_status = models.CharField(
+        max_length=20, choices=STATUS_CHOICES, default=PENDING
+    )
+    status_updated_at = models.DateTimeField(null=True, blank=True)
     score_at_review = models.PositiveSmallIntegerField(default=0)
     position = models.PositiveIntegerField(null=True, blank=True)  # waitlist rank
     manual_override = models.BooleanField(default=False)  # operator-pinned tier
@@ -363,3 +385,80 @@ class ConciergeRequest(TimestampMixin):
 
     def __str__(self):
         return f"ConciergeRequest<{self.user_id} {self.kind} {self.status}>"
+
+
+class FoundingTierCap(TimestampMixin):
+    """P1-11 — a real, operator-set capacity for each whitelist tier.
+
+    Ethical scarcity: the cap is a genuine intake limit, not marketing theatre.
+    Counters shown to users are computed truthfully as
+    ``remaining = max(0, cap - actual members in that tier)`` from live
+    WhitelistEntry rows — never a fabricated "only N left" number. A cap of 0
+    means uncapped (no artificial ceiling). Only a superuser may adjust caps.
+    """
+
+    tier = models.CharField(
+        max_length=32, choices=WhitelistEntry.TIER_CHOICES, unique=True
+    )
+    cap = models.PositiveIntegerField(default=0)  # 0 = uncapped
+    note = models.CharField(max_length=255, blank=True)
+    updated_by = models.ForeignKey(
+        USER, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+
+    def __str__(self):
+        return f"FoundingTierCap<{self.tier} cap={self.cap}>"
+
+    @property
+    def filled(self):
+        return WhitelistEntry.objects.filter(tier=self.tier).count()
+
+    @property
+    def remaining(self):
+        if not self.cap:  # 0 = uncapped
+            return None
+        return max(0, self.cap - self.filled)
+
+
+class CuratorInvitation(TimestampMixin):
+    """P1-9 — single-use, expiring invitation/nomination to become a Curator.
+
+    An operator (superuser) issues an invite to an email; the token is
+    single-use and expires. When the invited person accepts (while
+    authenticated), their role is promoted to Curator. Invites can be revoked
+    before they are accepted. Every action is auditable.
+    """
+
+    token = models.CharField(max_length=64, unique=True, db_index=True)
+    email = models.EmailField(max_length=255, blank=True)
+    note = models.CharField(max_length=255, blank=True)
+    issued_by = models.ForeignKey(
+        USER, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+    expires_at = models.DateTimeField()
+    revoked = models.BooleanField(default=False)
+    accepted_by = models.ForeignKey(
+        USER, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="curator_invitations_accepted",
+    )
+    accepted_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"CuratorInvitation<{self.email or self.token[:8]} accepted={bool(self.accepted_by_id)}>"
+
+    @property
+    def is_accepted(self):
+        return self.accepted_by_id is not None
+
+    def is_valid(self):
+        """Usable = not revoked, not accepted, not expired."""
+        from django.utils import timezone
+
+        return (
+            not self.revoked
+            and self.accepted_by_id is None
+            and self.expires_at > timezone.now()
+        )

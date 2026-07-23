@@ -360,12 +360,19 @@ class IntersetReward(TimestampMixin):
     user = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name="user_profile", **NULL_AND_BLANK
     )
-    art_style = models.JSONField(default=list, **NULL_AND_BLANK)
+    art_style = models.JSONField(default=list, **NULL_AND_BLANK)  # P1-6: preferred styles
     geographic_interset = models.JSONField(default=list, **NULL_AND_BLANK)
-    price_interset = models.CharField(max_length=255, **NULL_AND_BLANK)
+    price_interset = models.CharField(max_length=255, **NULL_AND_BLANK)  # P1-6: price band
     preferred_time_periods = models.JSONField(default=list, **NULL_AND_BLANK)
     goal_type = models.JSONField(default=list, **NULL_AND_BLANK)
     points_reward = models.JSONField(default=dict, **NULL_AND_BLANK)
+    # P1-6 — Collector preference profiling. Segmentation-queryable dimensions
+    # that complete the buyer picture (styles/price already above): preferred
+    # mediums, display spaces, and buying cadence. Used to boost queue standing
+    # and to segment collectors for concierge outreach.
+    mediums = models.JSONField(default=list, **NULL_AND_BLANK)  # e.g. ["painting","sculpture"]
+    preferred_spaces = models.JSONField(default=list, **NULL_AND_BLANK)  # e.g. ["home","office"]
+    buying_frequency = models.CharField(max_length=40, **NULL_AND_BLANK)  # first_time|occasional|regular|avid
 
 
 class KYCVerification(models.Model):

@@ -25,6 +25,10 @@ DISPOSABLE_DOMAINS = {
 
 DUP_IP_WINDOW = timedelta(hours=24)
 DUP_IP_THRESHOLD = 3
+# Enh-1: same-device signup burst — tighter than IP (shared NAT inflates IPs,
+# a device fingerprint repeating is a stronger multi-account signal).
+DUP_DEVICE_WINDOW = timedelta(hours=24)
+DUP_DEVICE_THRESHOLD = 2
 
 
 def is_disposable_email(email):
@@ -41,6 +45,25 @@ def client_ip(request):
     return request.META.get("REMOTE_ADDR") or None
 
 
+def _device_fingerprint(request):
+    """Enh-1: client-supplied device fingerprint (best-effort).
+
+    The SPA computes a stable hash (canvas/UA/screen/timezone) and sends it as
+    `device_fingerprint` in the register body or an `X-Device-Fingerprint`
+    header. Never trusted for auth — only a soft anti-fraud signal. Returns a
+    trimmed value or None.
+    """
+    fp = None
+    data = getattr(request, "data", None)
+    if isinstance(data, dict):
+        fp = data.get("device_fingerprint")
+    if not fp:
+        fp = request.META.get("HTTP_X_DEVICE_FINGERPRINT")
+    if not fp:
+        return None
+    return str(fp).strip()[:128] or None
+
+
 def record_signup_fingerprint(user, request):
     """Store signup IP/UA on the RoleProfile + AuditLog; soft-flag IP bursts.
 
@@ -53,18 +76,21 @@ def record_signup_fingerprint(user, request):
     try:
         ip = client_ip(request)
         ua = (request.META.get("HTTP_USER_AGENT") or "")[:255]
+        device_fp = _device_fingerprint(request)
         rp = RoleProfile.objects.filter(user=user).first()
         if rp is not None:
             details = dict(rp.details or {})
             details["signup_ip"] = ip
             details["signup_ua"] = ua
+            if device_fp:
+                details["device_fingerprint"] = device_fp
             RoleProfile.objects.filter(pk=rp.pk).update(details=details)
         AuditLog.objects.create(
             actor=user,
             action="signup",
             target_type="user",
             target_id=str(user.pk),
-            metadata={"ip": ip, "ua": ua},
+            metadata={"ip": ip, "ua": ua, "device_fp": device_fp},
         )
         if ip:
             recent = AuditLog.objects.filter(
@@ -78,6 +104,24 @@ def record_signup_fingerprint(user, request):
                     target_type="user",
                     target_id=str(user.pk),
                     metadata={"reason": "duplicate_ip_signup", "ip": ip, "count": recent},
+                )
+        # Enh-1: same device fingerprint reused across signups → multi-account flag.
+        if device_fp:
+            dev_recent = AuditLog.objects.filter(
+                action="signup",
+                metadata__device_fp=device_fp,
+                created_at__gte=timezone.now() - DUP_DEVICE_WINDOW,
+            ).count()
+            if dev_recent >= DUP_DEVICE_THRESHOLD:
+                AuditLog.objects.create(
+                    action="fraud_flag",
+                    target_type="user",
+                    target_id=str(user.pk),
+                    metadata={
+                        "reason": "duplicate_device_fingerprint",
+                        "device_fp": device_fp,
+                        "count": dev_recent,
+                    },
                 )
     except Exception:
         logger.exception(

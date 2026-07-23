@@ -427,3 +427,178 @@ class ConsentConfirmView(BaseAPIView):
         rec.confirm_token = ""
         rec.save(update_fields=["double_opt_in_confirmed", "confirm_token"])
         return self.send_success_response(data={"confirmed": True})
+
+
+class MeErasureView(BaseAPIView):
+    """Enh-3 — GDPR self-service erasure (right to be forgotten).
+
+    An authenticated user can erase their own account without contacting
+    support. This is a hard-confirmed soft delete + PII scrub: the row is
+    retained (referential integrity, financial/audit records) but deactivated,
+    de-identified, and de-verified — the same end state as the operator purge
+    command, applied to the caller only. The action is logged for compliance.
+    Superusers are refused (protects the admin account from self-lockout).
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        from django.utils import timezone
+
+        from fann.qualification.models import AuditLog, ConsentRecord
+
+        user = request.user
+        if user.is_superuser:
+            return self.send_bad_request_response(
+                message="Admin accounts cannot self-erase. Contact another superuser."
+            )
+        body = request.data if isinstance(request.data, dict) else {}
+        # Require an explicit, unambiguous confirmation to prevent accidents.
+        confirm = str(body.get("confirm") or "").strip().upper()
+        if confirm != "ERASE":
+            return self.send_bad_request_response(
+                message='Erasure requires {"confirm": "ERASE"}. This cannot be undone.'
+            )
+
+        uid = user.pk
+        # De-identify PII while keeping the row for integrity/audit.
+        user.first_name = ""
+        user.last_name = ""
+        user.email = f"erased+{uid}@deleted.tryfann.invalid"
+        user.phone_number = None
+        user.address = None
+        user.bio = None
+        user.about = None
+        user.location = None
+        user.title = None
+        user.profile_image = None
+        user.banner = None
+        user.socials = []
+        user.website = []
+        user.interests = []
+        user.application_data = {}
+        user.instagram_handle = None
+        user.is_active = False
+        user.is_verify = False
+        user.is_deleted = True
+        user.set_unusable_password()
+        user.save()
+
+        # Withdraw any standing consents as fresh immutable rows.
+        for ctype in (ConsentRecord.ANALYTICS, ConsentRecord.MARKETING):
+            ConsentRecord.objects.create(
+                user=None,  # detach from the now-erased identity
+                consent_type=ctype,
+                granted=False,
+                source="self_erasure",
+                ip=_client_ip(request),
+            )
+        AuditLog.objects.create(
+            actor=None,
+            action="self_erasure",
+            target_type="user",
+            target_id=str(uid),
+            metadata={"at": timezone.now().isoformat()},
+        )
+        return self.send_success_response(
+            message="Your account and personal data have been erased.",
+            data={"erased": True},
+        )
+
+
+class FoundingStatusView(BaseAPIView):
+    """P1-11 / P1-12 — truthful founding-tier scarcity + the caller's standing.
+
+    Returns, for each tier, the operator-set cap and the REAL number of members
+    currently in it (never a fabricated 'only N left'), plus — when
+    authenticated — the caller's own tier, application status, and waitlist
+    position. Open so the landing page can show honest capacity pre-signup.
+    """
+
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        from django.db.models import Count
+
+        from fann.qualification.models import FoundingTierCap, WhitelistEntry
+
+        counts = {
+            row["tier"]: row["n"]
+            for row in WhitelistEntry.objects.values("tier").annotate(n=Count("id"))
+        }
+        caps = {c.tier: c for c in FoundingTierCap.objects.all()}
+        tiers = []
+        for tier, label in WhitelistEntry.TIER_CHOICES:
+            cap_obj = caps.get(tier)
+            cap = cap_obj.cap if cap_obj else 0
+            filled = int(counts.get(tier, 0))
+            tiers.append({
+                "tier": tier,
+                "label": label,
+                "cap": cap,  # 0 = uncapped
+                "filled": filled,
+                "remaining": (max(0, cap - filled) if cap else None),
+                "is_full": bool(cap) and filled >= cap,
+            })
+        data = {"tiers": tiers}
+        if request.user.is_authenticated:
+            we = WhitelistEntry.objects.filter(user=request.user).first()
+            if we:
+                data["me"] = {
+                    "tier": we.tier,
+                    "tier_label": TIER_LABELS.get(we.tier, we.tier),
+                    "application_status": we.application_status,
+                    "status_label": dict(WhitelistEntry.STATUS_CHOICES).get(
+                        we.application_status, we.application_status
+                    ),
+                    "position": we.position,
+                    "status_updated_at": we.status_updated_at,
+                }
+        return self.send_success_response(data=data)
+
+
+class CuratorInvitationAcceptView(BaseAPIView):
+    """P1-9 — accept a curator invitation and become a Curator.
+
+    The caller (authenticated) submits the single-use token. If it is valid
+    (not revoked, not already used, not expired) the invitation is consumed and
+    the user's role is promoted to Curator. Logged for audit.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        from django.utils import timezone
+
+        from fann.qualification.models import AuditLog, CuratorInvitation
+
+        body = request.data if isinstance(request.data, dict) else {}
+        token = str(body.get("token") or "").strip()
+        if not token:
+            return self.send_bad_request_response(message="Missing invitation token.")
+        inv = CuratorInvitation.objects.filter(token=token).first()
+        if not inv or not inv.is_valid():
+            return self.send_bad_request_response(
+                message="This invitation is invalid, already used, revoked, or expired."
+            )
+        user = request.user
+        inv.accepted_by = user
+        inv.accepted_at = timezone.now()
+        inv.save(update_fields=["accepted_by", "accepted_at"])
+        old_role = user.role
+        user.role = "Curator"
+        user.save(update_fields=["role"])
+        rp = services.ensure_qualification(user)
+        RoleProfile.objects.filter(user=user).update(
+            role="Curator", track=services.track_for_role("Curator")
+        )
+        AuditLog.objects.create(
+            actor=user,
+            action="curator_invitation_accept",
+            target_type="user",
+            target_id=str(user.pk),
+            metadata={"invitation": inv.pk, "old_role": old_role},
+        )
+        return self.send_success_response(
+            message="You are now a Curator.", data=me_payload(user)
+        )
