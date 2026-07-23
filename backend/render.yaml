@@ -7,7 +7,12 @@ services:
     plan: free            # bump to "starter" ($7/mo) for always-on production
     branch: main
     rootDir: backend       # repo layout: /backend = this Django project
-    buildCommand: "pip install -r requirements-production.txt && python manage.py collectstatic --noinput"
+    # migrate runs in the build (before the new instance serves traffic) so DB
+    # schema is always ahead of the code. Safe here because every migration is
+    # additive/backward-compatible. NOTE: if this service's build command is set
+    # in the Render dashboard instead of this blueprint, either add `migrate`
+    # there too or run it manually in the Render Shell (see DEPLOYMENT_RUNBOOK).
+    buildCommand: "pip install -r requirements-production.txt && python manage.py migrate --noinput && python manage.py collectstatic --noinput"
     startCommand: "gunicorn core.wsgi:application --bind 0.0.0.0:$PORT --workers 3 --timeout 120"
     healthCheckPath: /health
     envVars:

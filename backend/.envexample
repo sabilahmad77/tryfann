@@ -1,13 +1,69 @@
-DB_NAME=dev_fann
-DB_USER=myuser
-DB_PASSWORD=newpassword
-DB_HOST=localhost
-DB_PORT=5432
+# TryFANN backend environment (settings_production reads these from the env).
+# Copy to a real secret store (Render env vars) — NEVER commit filled values.
+# "required" = the service is misconfigured for production without it.
+# "optional" = safe default exists; the app still boots without it.
 
-# P1-e — private encrypted media (KYC docs) on S3/R2. Leave blank to use local
-# storage (dev/staging). Set these on Render to activate S3 (end-register item D).
+# ============================================================================
+# CORE (required in production)
+# ============================================================================
+DJANGO_SETTINGS_MODULE=core.settings_production
+DJANGO_DEBUG=false
+# required: 50+ char random string. Render can generateValue for this.
+DJANGO_SECRET_KEY=
+# required: the API's own host(s), comma-separated.
+DJANGO_ALLOWED_HOSTS=api.tryfann.com
+
+# ============================================================================
+# DATABASE (required in production — else falls back to ephemeral SQLite)
+# ============================================================================
+# Postgres connection URL, e.g. postgres://user:pass@host:5432/dbname
+# On Render, use the INTERNAL database URL (bare host, no SSL) or the EXTERNAL
+# one (domain host, SSL auto-required). Override TLS with DB_SSL_REQUIRE.
+DATABASE_URL=
+# DB_SSL_REQUIRE=            # optional: true/false to force sslmode
+
+# ============================================================================
+# CORS / CSRF / FRONTEND (required — the frontend origins)
+# ============================================================================
+CORS_ALLOWED_ORIGINS=https://tryfann.com,https://www.tryfann.com
+CSRF_TRUSTED_ORIGINS=https://tryfann.com,https://www.tryfann.com,https://api.tryfann.com
+FRONTEND_BASE_URL=https://www.tryfann.com
+
+# ============================================================================
+# EMAIL (required for signup verification + notifications)
+# ============================================================================
+# Preferred: Resend over HTTPS (Render blocks outbound SMTP ports).
+RESEND_API_KEY=
+DEFAULT_FROM_EMAIL=TryFANN <no-reply@tryfann.com>
+# EMAIL_TIMEOUT=10          # optional: seconds before a mail send gives up
+# --- Alternative: generic SMTP (only where outbound SMTP is allowed) ---
+# EMAIL_HOST=
+# EMAIL_PORT=587
+# EMAIL_HOST_USER=
+# EMAIL_HOST_PASSWORD=
+# EMAIL_USE_TLS=true
+
+# ============================================================================
+# GOOGLE SIGN-IN (optional — empty makes the verify endpoint 400)
+# ============================================================================
+# The Web OAuth Client ID; MUST match the frontend VITE_GOOGLE_CLIENT_ID.
+GOOGLE_OAUTH_CLIENT_ID=
+
+# ============================================================================
+# MEDIA STORAGE — P1-e private encrypted S3/R2 for KYC docs (optional)
+# ============================================================================
+# Leave blank to use Render's LOCAL disk (EPHEMERAL — uploads vanish on
+# redeploy; acceptable only if KYC upload is not live at launch). Set all of
+# these to route uploads to a PRIVATE, encrypted bucket with signed URLs.
 AWS_STORAGE_BUCKET_NAME=
 AWS_ACCESS_KEY_ID=
 AWS_SECRET_ACCESS_KEY=
 AWS_S3_REGION_NAME=auto
 AWS_S3_ENDPOINT_URL=          # e.g. https://<accountid>.r2.cloudflarestorage.com for Cloudflare R2
+# AWS_QUERYSTRING_EXPIRE=300  # optional: signed-URL lifetime in seconds
+
+# ============================================================================
+# ANTI-FRAUD THROTTLES (optional — sane prod defaults already set)
+# ============================================================================
+# THROTTLE_REGISTER=10/hour
+# THROTTLE_REFER=30/hour
