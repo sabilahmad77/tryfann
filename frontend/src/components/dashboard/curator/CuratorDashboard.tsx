@@ -36,10 +36,13 @@ export function CuratorDashboard() {
     (state: RootState) => state.auth.profileCompleted
   );
 
-  const { data: dashboardStatsData, refetch: refetchDashboardStats } =
-    useGetDashboardStatsQuery(undefined, {
-      refetchOnMountOrArgChange: true,
-    });
+  const {
+    data: dashboardStatsData,
+    isLoading: isStatsLoading,
+    refetch: refetchDashboardStats,
+  } = useGetDashboardStatsQuery(undefined, {
+    refetchOnMountOrArgChange: true,
+  });
 
   const apiProfileCompleted = dashboardStatsData?.data?.profile_complete ?? false;
   const profileCompleted = reduxProfileCompleted ?? apiProfileCompleted;
@@ -79,7 +82,7 @@ export function CuratorDashboard() {
         <URLEncoder
           profileCompleted={profileCompleted}
           statsData={dashboardStatsData?.data}
-          isLoadingStats={!dashboardStatsData}
+          isLoadingStats={isStatsLoading}
           onRefetchStats={refetchDashboardStats}
         />
       </div>

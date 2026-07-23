@@ -79,7 +79,11 @@ export function DashboardPage() {
   const conciergeSkip = isConciergeRole(userRole || persona?.toLowerCase() || "");
 
   // Fetch dashboard stats to get profile_complete from API
-  const { data: dashboardStatsData, refetch: refetchDashboardStats } = useGetDashboardStatsQuery(undefined, {
+  const {
+    data: dashboardStatsData,
+    isLoading: isStatsLoading,
+    refetch: refetchDashboardStats,
+  } = useGetDashboardStatsQuery(undefined, {
     refetchOnMountOrArgChange: true,
     skip: conciergeSkip,
   });
@@ -206,7 +210,7 @@ export function DashboardPage() {
           <URLEncoder
             profileCompleted={profileCompleted}
             statsData={dashboardStatsData?.data}
-            isLoadingStats={!dashboardStatsData}
+            isLoadingStats={isStatsLoading}
             onRefetchStats={refetchDashboardStats}
           />
         </div>

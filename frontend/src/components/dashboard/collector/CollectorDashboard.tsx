@@ -42,7 +42,11 @@ export function CollectorDashboard() {
   const reduxProfileCompleted = useSelector((state: RootState) => state.auth.profileCompleted);
 
   // Fetch dashboard stats to get profile_complete from API
-  const { data: dashboardStatsData, refetch: refetchDashboardStats } = useGetDashboardStatsQuery(undefined, {
+  const {
+    data: dashboardStatsData,
+    isLoading: isStatsLoading,
+    refetch: refetchDashboardStats,
+  } = useGetDashboardStatsQuery(undefined, {
     refetchOnMountOrArgChange: true,
   });
 
@@ -103,7 +107,7 @@ export function CollectorDashboard() {
         <URLEncoder
           profileCompleted={profileCompleted}
           statsData={dashboardStatsData?.data}
-          isLoadingStats={!dashboardStatsData}
+          isLoadingStats={isStatsLoading}
           onRefetchStats={refetchDashboardStats}
         />
       </div>
@@ -146,7 +150,7 @@ export function CollectorDashboard() {
         >
           <MarketInsights
             statsData={dashboardStatsData?.data}
-            isLoadingStats={!dashboardStatsData}
+            isLoadingStats={isStatsLoading}
           />
         </motion.div>
       </div>
